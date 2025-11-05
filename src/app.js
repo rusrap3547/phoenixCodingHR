@@ -8,11 +8,27 @@ class StudyHallApp {
 		this.sectionStates = {
 			favorites: true,
 			dashboards: true,
+			documentation: true,
 			spaces: true,
 		};
 
 		// Load dashboards from localStorage or use defaults
 		this.dashboards = this.loadDashboards();
+
+		// Task management
+		this.tasks = this.loadTasks();
+		this.taskIdCounter = this.getNextTaskId();
+
+		// Documentation management
+		this.documents = this.loadDocuments();
+		this.policies = this.loadPolicies();
+		this.trainings = this.loadTrainings();
+		this.templates = this.loadTemplates();
+
+		// Calendar/Meetings management
+		this.meetings = this.loadMeetings();
+		this.dailyStats = this.generateDailyStats();
+
 		this.init();
 	}
 
@@ -49,6 +65,965 @@ class StudyHallApp {
 		}
 	}
 
+	// Task management methods
+	loadTasks() {
+		try {
+			const saved = localStorage.getItem("study-hall-tasks");
+			if (saved) {
+				const tasks = JSON.parse(saved);
+				console.log("Loaded tasks from localStorage:", tasks);
+				return tasks;
+			}
+		} catch (error) {
+			console.warn("Failed to load tasks from localStorage:", error);
+		}
+
+		// Return default tasks if none saved
+		return [
+			{
+				id: 1,
+				title: "Review candidate applications",
+				description:
+					"Review and process new job applications for the development team",
+				assignee: "Sarah Johnson",
+				assigneeEmail: "hr@studyhall.com",
+				dueDate: "2025-11-06",
+				priority: "high",
+				status: "pending",
+				category: "HR",
+				createdAt: "2025-11-05T10:00:00Z",
+				createdBy: "Admin User",
+			},
+			{
+				id: 2,
+				title: "Update job descriptions",
+				description:
+					"Revise and update job descriptions for all technical positions",
+				assignee: "Mike Chen",
+				assigneeEmail: "manager@studyhall.com",
+				dueDate: "2025-11-10",
+				priority: "medium",
+				status: "pending",
+				category: "Operations",
+				createdAt: "2025-11-05T09:30:00Z",
+				createdBy: "Admin User",
+			},
+		];
+	}
+
+	saveTasks() {
+		try {
+			localStorage.setItem("study-hall-tasks", JSON.stringify(this.tasks));
+			console.log("Tasks saved to localStorage");
+		} catch (error) {
+			console.warn("Failed to save tasks to localStorage:", error);
+		}
+	}
+
+	getNextTaskId() {
+		const maxId = this.tasks.reduce((max, task) => Math.max(max, task.id), 0);
+		return maxId + 1;
+	}
+
+	// Calendar/Meetings management
+	loadMeetings() {
+		try {
+			const saved = localStorage.getItem("study-hall-meetings");
+			if (saved) {
+				return JSON.parse(saved);
+			}
+		} catch (error) {
+			console.warn("Failed to load meetings from localStorage:", error);
+		}
+
+		// Return default meetings if none saved
+		return [
+			{
+				id: 1,
+				title: "Team Standup",
+				date: "2025-11-05",
+				time: "09:00",
+				duration: 30,
+				attendees: ["Admin User", "Sarah Johnson", "Mike Chen"],
+				type: "recurring",
+				location: "Conference Room A",
+			},
+			{
+				id: 2,
+				title: "Interview: Software Engineer",
+				date: "2025-11-06",
+				time: "14:00",
+				duration: 60,
+				attendees: ["Sarah Johnson", "Mike Chen"],
+				type: "interview",
+				location: "Video Call",
+			},
+			{
+				id: 3,
+				title: "HR Department Review",
+				date: "2025-11-07",
+				time: "10:30",
+				duration: 90,
+				attendees: ["Admin User", "Sarah Johnson"],
+				type: "meeting",
+				location: "Conference Room B",
+			},
+			{
+				id: 4,
+				title: "Quarterly Planning",
+				date: "2025-11-08",
+				time: "13:00",
+				duration: 120,
+				attendees: ["Admin User", "Sarah Johnson", "Mike Chen"],
+				type: "planning",
+				location: "Main Conference Room",
+			},
+		];
+	}
+
+	generateDailyStats() {
+		const currentUser = window.authSystem?.getCurrentUser();
+		const today = new Date().toISOString().split("T")[0];
+
+		// Get user's tasks
+		const userTasks = this.tasks.filter(
+			(task) => task.assigneeEmail === currentUser?.email
+		);
+
+		// Get today's meetings
+		const todaysMeetings = this.meetings.filter(
+			(meeting) =>
+				meeting.date === today && meeting.attendees.includes(currentUser?.name)
+		);
+
+		// Calculate stats
+		const completedTasks = userTasks.filter(
+			(task) => task.status === "completed"
+		).length;
+		const pendingTasks = userTasks.filter(
+			(task) => task.status === "pending"
+		).length;
+		const overdueTasks = userTasks.filter(
+			(task) =>
+				task.dueDate &&
+				new Date(task.dueDate) < new Date() &&
+				task.status !== "completed"
+		).length;
+
+		const todayHours =
+			todaysMeetings.reduce((total, meeting) => total + meeting.duration, 0) /
+			60;
+
+		return {
+			tasksCompleted: completedTasks,
+			tasksPending: pendingTasks,
+			tasksOverdue: overdueTasks,
+			meetingsToday: todaysMeetings.length,
+			hoursInMeetings: Math.round(todayHours * 10) / 10,
+			totalTasks: userTasks.length,
+		};
+	}
+
+	// Documentation management methods
+	loadDocuments() {
+		try {
+			const saved = localStorage.getItem("study-hall-documents");
+			if (saved) {
+				return JSON.parse(saved);
+			}
+		} catch (error) {
+			console.warn("Failed to load documents from localStorage:", error);
+		}
+
+		// Return default documents
+		return [
+			{
+				id: 1,
+				title: "Employee Handbook",
+				category: "hr-policies",
+				type: "PDF",
+				description:
+					"Comprehensive guide covering all company policies, procedures, and benefits",
+				author: "HR Department",
+				lastModified: "2025-10-15",
+				tags: ["policies", "onboarding", "benefits"],
+				content: `# Employee Handbook\n\n## Welcome to The Study Hall\n\nThis handbook contains important information about our company policies...`,
+				icon: "📚",
+			},
+			{
+				id: 2,
+				title: "Remote Work Policy",
+				category: "hr-policies",
+				type: "Document",
+				description: "Guidelines and requirements for remote work arrangements",
+				author: "Sarah Johnson",
+				lastModified: "2025-11-01",
+				tags: ["remote", "policy", "flexibility"],
+				content: `# Remote Work Policy\n\n## Overview\n\nThe Study Hall supports flexible work arrangements...`,
+				icon: "🏠",
+			},
+			{
+				id: 3,
+				title: "Onboarding Checklist",
+				category: "procedures",
+				type: "Checklist",
+				description: "Step-by-step process for new employee onboarding",
+				author: "HR Department",
+				lastModified: "2025-10-28",
+				tags: ["onboarding", "checklist", "new-hire"],
+				content: `# New Employee Onboarding Checklist\n\n## Pre-Start\n- [ ] Send welcome email\n- [ ] Prepare workspace...`,
+				icon: "✅",
+			},
+			{
+				id: 4,
+				title: "IT Setup Guide",
+				category: "procedures",
+				type: "Guide",
+				description: "Technical setup instructions for new employees",
+				author: "IT Department",
+				lastModified: "2025-10-20",
+				tags: ["IT", "setup", "technical"],
+				content: `# IT Setup Guide\n\n## Equipment Assignment\n\n1. Laptop Configuration\n2. Software Installation...`,
+				icon: "💻",
+			},
+			{
+				id: 5,
+				title: "Performance Review Process",
+				category: "procedures",
+				type: "Process",
+				description: "Annual performance review procedures and timeline",
+				author: "HR Department",
+				lastModified: "2025-09-15",
+				tags: ["performance", "review", "evaluation"],
+				content: `# Performance Review Process\n\n## Timeline\n\nQuarterly check-ins and annual reviews...`,
+				icon: "📊",
+			},
+		];
+	}
+
+	loadPolicies() {
+		try {
+			const saved = localStorage.getItem("study-hall-policies");
+			if (saved) {
+				return JSON.parse(saved);
+			}
+		} catch (error) {
+			console.warn("Failed to load policies from localStorage:", error);
+		}
+
+		return [
+			{
+				id: 1,
+				title: "Code of Conduct",
+				description:
+					"Professional behavior standards and ethical guidelines for all employees",
+				status: "active",
+				lastUpdated: "2025-10-01",
+				version: "2.1",
+				category: "Ethics & Compliance",
+				icon: "⚖️",
+			},
+			{
+				id: 2,
+				title: "Data Privacy Policy",
+				description:
+					"Guidelines for handling sensitive company and customer data",
+				status: "active",
+				lastUpdated: "2025-09-15",
+				version: "1.3",
+				category: "Security",
+				icon: "🔒",
+			},
+			{
+				id: 3,
+				title: "Leave of Absence Policy",
+				description:
+					"Procedures for requesting and managing various types of leave",
+				status: "active",
+				lastUpdated: "2025-08-20",
+				version: "1.8",
+				category: "HR Policies",
+				icon: "🏖️",
+			},
+			{
+				id: 4,
+				title: "Equipment Usage Policy",
+				description: "Guidelines for company equipment use and maintenance",
+				status: "draft",
+				lastUpdated: "2025-11-03",
+				version: "2.0-draft",
+				category: "IT Policies",
+				icon: "🖥️",
+			},
+			{
+				id: 5,
+				title: "Social Media Policy",
+				description: "Professional social media usage guidelines",
+				status: "active",
+				lastUpdated: "2025-07-10",
+				version: "1.2",
+				category: "Communications",
+				icon: "📱",
+			},
+		];
+	}
+
+	loadTrainings() {
+		try {
+			const saved = localStorage.getItem("study-hall-trainings");
+			if (saved) {
+				return JSON.parse(saved);
+			}
+		} catch (error) {
+			console.warn("Failed to load trainings from localStorage:", error);
+		}
+
+		return [
+			{
+				id: 1,
+				title: "New Employee Orientation",
+				description:
+					"Comprehensive introduction to company culture, values, and basic procedures",
+				duration: "4 hours",
+				type: "Interactive",
+				lastUpdated: "2025-10-15",
+				completions: 45,
+				icon: "🎯",
+			},
+			{
+				id: 2,
+				title: "Data Security Awareness",
+				description:
+					"Essential cybersecurity practices and threat awareness training",
+				duration: "2 hours",
+				type: "Online Course",
+				lastUpdated: "2025-11-01",
+				completions: 52,
+				icon: "🛡️",
+			},
+			{
+				id: 3,
+				title: "Leadership Development",
+				description:
+					"Management skills and leadership principles for team leads and managers",
+				duration: "6 hours",
+				type: "Workshop",
+				lastUpdated: "2025-09-20",
+				completions: 18,
+				icon: "👑",
+			},
+		];
+	}
+
+	loadTemplates() {
+		try {
+			const saved = localStorage.getItem("study-hall-templates");
+			if (saved) {
+				return JSON.parse(saved);
+			}
+		} catch (error) {
+			console.warn("Failed to load templates from localStorage:", error);
+		}
+
+		return [
+			{
+				id: 1,
+				title: "Job Description Template",
+				type: "Word Document",
+				description: "Standardized format for creating job descriptions",
+				category: "HR",
+				icon: "📝",
+			},
+			{
+				id: 2,
+				title: "Performance Review Form",
+				type: "PDF Form",
+				description: "Annual performance evaluation template",
+				category: "HR",
+				icon: "📋",
+			},
+		];
+	}
+
+	saveDocuments() {
+		try {
+			localStorage.setItem(
+				"study-hall-documents",
+				JSON.stringify(this.documents)
+			);
+		} catch (error) {
+			console.error("Failed to save documents:", error);
+		}
+	}
+
+	savePolicies() {
+		try {
+			localStorage.setItem(
+				"study-hall-policies",
+				JSON.stringify(this.policies)
+			);
+		} catch (error) {
+			console.error("Failed to save policies:", error);
+		}
+	}
+
+	saveTrainings() {
+		try {
+			localStorage.setItem(
+				"study-hall-trainings",
+				JSON.stringify(this.trainings)
+			);
+		} catch (error) {
+			console.error("Failed to save trainings:", error);
+		}
+	}
+
+	saveTemplates() {
+		try {
+			localStorage.setItem(
+				"study-hall-templates",
+				JSON.stringify(this.templates)
+			);
+		} catch (error) {
+			console.error("Failed to save templates:", error);
+		}
+	}
+
+	// Dashboard rendering methods
+	renderMyTasks() {
+		const currentUser = window.authSystem?.getCurrentUser();
+		const container = document.getElementById("myTasksContainer");
+
+		if (!container || !currentUser) return;
+
+		// Get user's tasks sorted by most recent
+		const userTasks = this.tasks
+			.filter((task) => task.assigneeEmail === currentUser.email)
+			.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+		if (userTasks.length === 0) {
+			container.innerHTML = `
+				<div class="empty-state">
+					<p>No tasks assigned to you yet.</p>
+					<button class="btn btn-primary" onclick="studyHallApp.showTaskModal()">
+						Create Your First Task
+					</button>
+				</div>
+			`;
+			return;
+		}
+
+		container.innerHTML = userTasks
+			.map(
+				(task) => `
+			<div class="task-item ${task.status}" data-task-id="${task.id}">
+				<div class="task-header">
+					<div class="task-title-section">
+						<button class="task-status-btn" onclick="studyHallApp.toggleTaskStatus(${
+							task.id
+						})" 
+								title="${
+									task.status === "completed"
+										? "Mark as pending"
+										: "Mark as completed"
+								}">
+							${task.status === "completed" ? "✅" : "⭕"}
+						</button>
+						<div class="task-details">
+							<div class="task-title">${task.title}</div>
+							${
+								task.description
+									? `<div class="task-description">${task.description}</div>`
+									: ""
+							}
+						</div>
+					</div>
+					<div class="task-actions">
+						<span class="task-priority priority-${task.priority}">${task.priority}</span>
+						<button class="task-action-btn" onclick="studyHallApp.showTaskModal(${
+							task.id
+						})" title="Edit task">
+							✏️
+						</button>
+						<button class="task-action-btn" onclick="studyHallApp.deleteTask(${
+							task.id
+						})" title="Delete task">
+							🗑️
+						</button>
+					</div>
+				</div>
+				<div class="task-meta">
+					${task.dueDate ? `<span class="task-due-date">Due: ${task.dueDate}</span>` : ""}
+					<span class="task-assignee">Assigned to: ${task.assigneeName}</span>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	renderUpcomingMeetings() {
+		const currentUser = window.authSystem?.getCurrentUser();
+		const container = document.getElementById("meetingsContainer");
+
+		if (!container || !currentUser) return;
+
+		// Get upcoming meetings (next 7 days) where user is attending
+		const today = new Date();
+		const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+		const upcomingMeetings = this.meetings
+			.filter((meeting) => {
+				const meetingDate = new Date(meeting.date);
+				return (
+					meetingDate >= today &&
+					meetingDate <= nextWeek &&
+					meeting.attendees.includes(currentUser.name)
+				);
+			})
+			.sort(
+				(a, b) =>
+					new Date(a.date + " " + a.time) - new Date(b.date + " " + b.time)
+			)
+			.slice(0, 5); // Show only next 5 meetings
+
+		if (upcomingMeetings.length === 0) {
+			container.innerHTML = `
+				<div class="empty-state">
+					<p>No upcoming meetings this week.</p>
+				</div>
+			`;
+			return;
+		}
+
+		container.innerHTML = upcomingMeetings
+			.map(
+				(meeting) => `
+			<div class="meeting-item">
+				<div class="meeting-header">
+					<div class="meeting-title">${meeting.title}</div>
+					<div class="meeting-time">${meeting.time}</div>
+				</div>
+				<div class="meeting-info">
+					<div class="meeting-date">${new Date(meeting.date).toLocaleDateString()}</div>
+					<div class="meeting-location">📍 ${meeting.location}</div>
+					<div class="meeting-attendees">👥 ${meeting.attendees.length} attendees</div>
+					<span class="meeting-type ${meeting.type}">${meeting.type}</span>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	renderDailyStats() {
+		const container = document.getElementById("dailyStats");
+		const stats = this.dailyStats;
+
+		if (!container) return;
+
+		container.innerHTML = `
+			<div class="stats-grid">
+				<div class="stat-card tasks-completed">
+					<div class="stat-number">${stats.tasksCompleted}</div>
+					<div class="stat-label">Completed</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-number">${stats.tasksPending}</div>
+					<div class="stat-label">Pending</div>
+				</div>
+				<div class="stat-card tasks-overdue">
+					<div class="stat-number">${stats.tasksOverdue}</div>
+					<div class="stat-label">Overdue</div>
+				</div>
+				<div class="stat-card meetings">
+					<div class="stat-number">${stats.meetingsToday}</div>
+					<div class="stat-label">Meetings Today</div>
+				</div>
+			</div>
+		`;
+	}
+
+	renderDashboard() {
+		// Render all dashboard components
+		this.renderMyTasks();
+		this.renderUpcomingMeetings();
+		this.renderDailyStats();
+	}
+
+	// Documentation rendering methods
+	renderDocuments(category = "all") {
+		const container = document.getElementById("docsList");
+		if (!container) return;
+
+		let filteredDocs = this.documents;
+		if (category !== "all") {
+			filteredDocs = this.documents.filter((doc) => doc.category === category);
+		}
+
+		if (filteredDocs.length === 0) {
+			container.innerHTML = `
+				<div class="empty-state">
+					<p>No documents found in this category.</p>
+					<button class="btn btn-primary" onclick="studyHallApp.showCreateDocumentModal()">
+						Create First Document
+					</button>
+				</div>
+			`;
+			return;
+		}
+
+		container.innerHTML = filteredDocs
+			.map(
+				(doc) => `
+			<div class="document-item" onclick="studyHallApp.openDocument(${doc.id})">
+				<div class="document-icon">${doc.icon}</div>
+				<div class="document-info">
+					<div class="document-title">${doc.title}</div>
+					<div class="document-meta">
+						<span>By ${doc.author}</span>
+						<span>Modified ${new Date(doc.lastModified).toLocaleDateString()}</span>
+						<span>${doc.type}</span>
+					</div>
+					<div class="document-description">${doc.description}</div>
+					<div class="document-category">${this.getCategoryName(doc.category)}</div>
+				</div>
+				<div class="document-actions">
+					<button class="doc-action-btn" onclick="event.stopPropagation(); studyHallApp.editDocument(${
+						doc.id
+					})" title="Edit">
+						✏️
+					</button>
+					<button class="doc-action-btn" onclick="event.stopPropagation(); studyHallApp.shareDocument(${
+						doc.id
+					})" title="Share">
+						🔗
+					</button>
+					<button class="doc-action-btn" onclick="event.stopPropagation(); studyHallApp.deleteDocument(${
+						doc.id
+					})" title="Delete">
+						🗑️
+					</button>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	renderPolicies() {
+		const container = document.getElementById("policiesGrid");
+		if (!container) return;
+
+		container.innerHTML = this.policies
+			.map(
+				(policy) => `
+			<div class="policy-card" onclick="studyHallApp.openPolicy(${policy.id})">
+				<div class="policy-header">
+					<div class="policy-icon">${policy.icon}</div>
+					<div class="policy-title">${policy.title}</div>
+				</div>
+				<div class="policy-description">${policy.description}</div>
+				<div class="policy-meta">
+					<span>v${policy.version}</span>
+					<span class="policy-status ${policy.status}">${policy.status}</span>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	renderTrainings() {
+		const container = document.getElementById("trainingGrid");
+		if (!container) return;
+
+		container.innerHTML = this.trainings
+			.map(
+				(training) => `
+			<div class="training-card" onclick="studyHallApp.openTraining(${training.id})">
+				<div class="training-thumbnail">${training.icon}</div>
+				<div class="training-content">
+					<div class="training-title">${training.title}</div>
+					<div class="training-description">${training.description}</div>
+					<div class="training-meta">
+						<span>${training.completions} completed</span>
+						<span class="training-duration">${training.duration}</span>
+					</div>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	renderTemplates() {
+		const container = document.getElementById("templatesGrid");
+		if (!container) return;
+
+		container.innerHTML = this.templates
+			.map(
+				(template) => `
+			<div class="template-card">
+				<div class="template-icon">${template.icon}</div>
+				<div class="template-title">${template.title}</div>
+				<div class="template-type">${template.type}</div>
+				<div class="template-actions">
+					<button class="btn btn-sm btn-primary" onclick="studyHallApp.useTemplate(${template.id})">
+						Use Template
+					</button>
+					<button class="btn btn-sm" onclick="studyHallApp.editTemplate(${template.id})">
+						Edit
+					</button>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	// Documentation interaction methods
+	openDocument(docId) {
+		const doc = this.documents.find((d) => d.id === docId);
+		if (!doc) return;
+
+		const viewer = document.getElementById("docsViewer");
+		const content = document.getElementById("viewerContent");
+		const docsList = document.getElementById("docsList").parentElement;
+
+		// Hide docs list and show viewer
+		docsList.style.display = "none";
+		viewer.style.display = "flex";
+
+		// Render document content (markdown-like)
+		content.innerHTML = `
+			<div class="document-header">
+				<h1>${doc.title}</h1>
+				<div class="document-meta">
+					<span><strong>Author:</strong> ${doc.author}</span>
+					<span><strong>Last Modified:</strong> ${new Date(
+						doc.lastModified
+					).toLocaleDateString()}</span>
+					<span><strong>Type:</strong> ${doc.type}</span>
+					<span><strong>Category:</strong> ${this.getCategoryName(doc.category)}</span>
+				</div>
+			</div>
+			<div class="document-body">
+				${this.formatDocumentContent(doc.content)}
+			</div>
+		`;
+	}
+
+	closeDocumentViewer() {
+		const viewer = document.getElementById("docsViewer");
+		const docsList = document.getElementById("docsList").parentElement;
+
+		viewer.style.display = "none";
+		docsList.style.display = "flex";
+	}
+
+	formatDocumentContent(content) {
+		// Simple markdown-like formatting
+		return content
+			.replace(/^# (.*$)/gm, "<h1>$1</h1>")
+			.replace(/^## (.*$)/gm, "<h2>$1</h2>")
+			.replace(/^### (.*$)/gm, "<h3>$1</h3>")
+			.replace(
+				/^\- \[([ x])\] (.*$)/gm,
+				'<div class="checkbox-item"><input type="checkbox" $1 disabled> $2</div>'
+			)
+			.replace(/^\- (.*$)/gm, "<li>$1</li>")
+			.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+			.replace(/\*(.*?)\*/g, "<em>$1</em>")
+			.replace(/\n/g, "<br>");
+	}
+
+	getCategoryName(category) {
+		const categories = {
+			all: "All Documents",
+			"hr-policies": "HR Policies",
+			procedures: "Procedures",
+			training: "Training",
+			templates: "Templates",
+		};
+		return categories[category] || category;
+	}
+
+	// Documentation category filtering
+	filterDocuments(category) {
+		// Update active category
+		document.querySelectorAll(".docs-category").forEach((cat) => {
+			cat.classList.remove("active");
+		});
+		document
+			.querySelector(`[data-category="${category}"]`)
+			.classList.add("active");
+
+		// Update breadcrumb
+		const breadcrumb = document.getElementById("docsBreadcrumb");
+		breadcrumb.innerHTML = `
+			<span class="breadcrumb-item">Knowledge Base</span>
+			<span class="breadcrumb-item active">${this.getCategoryName(category)}</span>
+		`;
+
+		// Render filtered documents
+		this.renderDocuments(category);
+	}
+
+	// Documentation search functionality
+	searchDocuments(searchTerm) {
+		const container = document.getElementById("docsList");
+		if (!container) return;
+
+		if (!searchTerm.trim()) {
+			// If search is empty, show all documents
+			this.renderDocuments();
+			return;
+		}
+
+		// Filter documents based on search term
+		const filteredDocs = this.documents.filter(
+			(doc) =>
+				doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				doc.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				doc.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				doc.tags.some((tag) =>
+					tag.toLowerCase().includes(searchTerm.toLowerCase())
+				)
+		);
+
+		if (filteredDocs.length === 0) {
+			container.innerHTML = `
+				<div class="empty-state">
+					<p>No documents found matching "${searchTerm}"</p>
+					<button class="btn btn-primary" onclick="studyHallApp.clearSearch()">
+						Clear Search
+					</button>
+				</div>
+			`;
+			return;
+		}
+
+		// Render search results
+		container.innerHTML = filteredDocs
+			.map(
+				(doc) => `
+			<div class="document-item" onclick="studyHallApp.openDocument(${doc.id})">
+				<div class="document-icon">${doc.icon}</div>
+				<div class="document-info">
+					<div class="document-title">${this.highlightSearchTerm(
+						doc.title,
+						searchTerm
+					)}</div>
+					<div class="document-meta">
+						<span>By ${doc.author}</span>
+						<span>Modified ${new Date(doc.lastModified).toLocaleDateString()}</span>
+						<span>${doc.type}</span>
+					</div>
+					<div class="document-description">${this.highlightSearchTerm(
+						doc.description,
+						searchTerm
+					)}</div>
+					<div class="document-category">${this.getCategoryName(doc.category)}</div>
+				</div>
+				<div class="document-actions">
+					<button class="doc-action-btn" onclick="event.stopPropagation(); studyHallApp.editDocument(${
+						doc.id
+					})" title="Edit">
+						✏️
+					</button>
+					<button class="doc-action-btn" onclick="event.stopPropagation(); studyHallApp.shareDocument(${
+						doc.id
+					})" title="Share">
+						🔗
+					</button>
+					<button class="doc-action-btn" onclick="event.stopPropagation(); studyHallApp.deleteDocument(${
+						doc.id
+					})" title="Delete">
+						🗑️
+					</button>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+
+		// Update breadcrumb to show search results
+		const breadcrumb = document.getElementById("docsBreadcrumb");
+		breadcrumb.innerHTML = `
+			<span class="breadcrumb-item">Knowledge Base</span>
+			<span class="breadcrumb-item active">Search Results (${filteredDocs.length})</span>
+		`;
+	}
+
+	highlightSearchTerm(text, searchTerm) {
+		if (!searchTerm.trim()) return text;
+		const regex = new RegExp(`(${searchTerm})`, "gi");
+		return text.replace(regex, "<mark>$1</mark>");
+	}
+
+	clearSearch() {
+		const searchInput = document.getElementById("docsSearchInput");
+		if (searchInput) {
+			searchInput.value = "";
+		}
+		this.renderDocuments();
+	}
+
+	// Placeholder methods for document actions
+	showCreateDocumentModal() {
+		this.showNotification("Document creation coming soon!", "info");
+	}
+
+	editDocument(docId) {
+		this.showNotification("Document editing coming soon!", "info");
+	}
+
+	shareDocument(docId) {
+		this.showNotification("Document sharing coming soon!", "info");
+	}
+
+	deleteDocument(docId) {
+		if (confirm("Are you sure you want to delete this document?")) {
+			this.documents = this.documents.filter((d) => d.id !== docId);
+			this.saveDocuments();
+			this.renderDocuments();
+			this.showNotification("Document deleted successfully!", "success");
+		}
+	}
+
+	printDocument() {
+		window.print();
+	}
+
+	openPolicy(policyId) {
+		this.showNotification("Policy viewer coming soon!", "info");
+	}
+
+	openTraining(trainingId) {
+		this.showNotification("Training viewer coming soon!", "info");
+	}
+
+	useTemplate(templateId) {
+		this.showNotification("Template usage coming soon!", "info");
+	}
+
+	editTemplate(templateId) {
+		this.showNotification("Template editing coming soon!", "info");
+	}
+
+	showCreatePolicyModal() {
+		this.showNotification("Policy creation coming soon!", "info");
+	}
+
+	showCreateTrainingModal() {
+		this.showNotification("Training creation coming soon!", "info");
+	}
+
+	showCreateTemplateModal() {
+		this.showNotification("Template creation coming soon!", "info");
+	}
+
 	init() {
 		console.log("StudyHallApp initializing...");
 
@@ -60,6 +1035,10 @@ class StudyHallApp {
 		this.updatePageTitle();
 		this.initializeSectionStates();
 		this.initializeSavedDashboards();
+
+		// Render the dashboard when app initializes
+		this.renderDashboard();
+
 		console.log("StudyHallApp initialized successfully!");
 	}
 
@@ -159,6 +1138,14 @@ class StudyHallApp {
 		window.addEventListener("resize", () => {
 			this.handleResize();
 		});
+
+		// Documentation search
+		const docsSearchInput = document.getElementById("docsSearchInput");
+		if (docsSearchInput) {
+			docsSearchInput.addEventListener("input", (e) => {
+				this.searchDocuments(e.target.value);
+			});
+		}
 	}
 
 	initializeSectionStates() {
@@ -1522,6 +2509,26 @@ class StudyHallApp {
 		// Update page title
 		this.updatePageTitle(viewName);
 
+		// Handle view-specific rendering
+		if (viewName === "tasks") {
+			this.renderTasks();
+		} else if (viewName === "docs") {
+			this.renderDocuments();
+			// Set up category click handlers
+			document.querySelectorAll(".docs-category").forEach((category) => {
+				category.addEventListener("click", () => {
+					const categoryType = category.dataset.category;
+					this.filterDocuments(categoryType);
+				});
+			});
+		} else if (viewName === "policies") {
+			this.renderPolicies();
+		} else if (viewName === "training") {
+			this.renderTrainings();
+		} else if (viewName === "templates") {
+			this.renderTemplates();
+		}
+
 		// Update URL and browser history
 		if (pushState) {
 			const url = `#${viewName}`;
@@ -1625,6 +2632,328 @@ class StudyHallApp {
 			this.collapseSidebar();
 		} else if (window.innerWidth > 768 && this.sidebarCollapsed) {
 			this.expandSidebar();
+		}
+	}
+
+	// Task Management Methods
+	showTaskModal(taskId = null) {
+		const isEditing = taskId !== null;
+		const task = isEditing ? this.tasks.find((t) => t.id === taskId) : null;
+
+		// Get current user info
+		const currentUser = window.authSystem?.getCurrentUser();
+
+		// Get all users for assignment dropdown
+		const users = [
+			{ name: "Admin User", email: "admin@studyhall.com" },
+			{ name: "Sarah Johnson", email: "hr@studyhall.com" },
+			{ name: "Mike Chen", email: "manager@studyhall.com" },
+			{
+				name: currentUser?.name || "Current User",
+				email: currentUser?.email || "user@studyhall.com",
+			},
+		];
+
+		// Remove duplicates
+		const uniqueUsers = users.filter(
+			(user, index, self) =>
+				index === self.findIndex((u) => u.email === user.email)
+		);
+
+		const modal = document.createElement("div");
+		modal.className = "modal-overlay";
+		modal.innerHTML = `
+			<div class="modal-content">
+				<div class="modal-header">
+					<h2>${isEditing ? "Edit Task" : "Create New Task"}</h2>
+					<button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+				</div>
+				<form class="task-form" onsubmit="event.preventDefault(); studyHallApp.${
+					isEditing ? "updateTask" : "createTask"
+				}(this, ${taskId || "null"})">
+					<div class="form-group">
+						<label for="taskTitle">Task Title *</label>
+						<input 
+							type="text" 
+							id="taskTitle" 
+							name="title" 
+							required 
+							placeholder="Enter task title..."
+							value="${task?.title || ""}"
+						>
+					</div>
+					
+					<div class="form-group">
+						<label for="taskDescription">Description</label>
+						<textarea 
+							id="taskDescription" 
+							name="description" 
+							placeholder="Add task description..."
+							rows="3"
+						>${task?.description || ""}</textarea>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="taskAssignee">Assign To *</label>
+							<select id="taskAssignee" name="assignee" required>
+								<option value="">Select assignee...</option>
+								${uniqueUsers
+									.map(
+										(user) => `
+									<option value="${user.email}" ${
+											task?.assigneeEmail === user.email ? "selected" : ""
+										}>
+										${user.name}
+									</option>
+								`
+									)
+									.join("")}
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label for="taskDueDate">Due Date</label>
+							<input 
+								type="date" 
+								id="taskDueDate" 
+								name="dueDate"
+								value="${task?.dueDate || ""}"
+							>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="taskPriority">Priority</label>
+							<select id="taskPriority" name="priority">
+								<option value="low" ${task?.priority === "low" ? "selected" : ""}>Low</option>
+								<option value="medium" ${
+									task?.priority === "medium" ? "selected" : ""
+								}>Medium</option>
+								<option value="high" ${
+									task?.priority === "high" ? "selected" : ""
+								}>High</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label for="taskCategory">Category</label>
+							<input 
+								type="text" 
+								id="taskCategory" 
+								name="category" 
+								placeholder="e.g., HR, Operations, Development"
+								value="${task?.category || ""}"
+							>
+						</div>
+					</div>
+					
+					<div class="form-actions">
+						<button type="button" class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
+							Cancel
+						</button>
+						<button type="submit" class="btn btn-primary">
+							${isEditing ? "Update Task" : "Create Task"}
+						</button>
+					</div>
+				</form>
+			</div>
+		`;
+
+		document.body.appendChild(modal);
+
+		// Focus on title input
+		setTimeout(() => {
+			modal.querySelector("#taskTitle").focus();
+		}, 100);
+	}
+
+	createTask(form, taskId) {
+		const formData = new FormData(form);
+		const currentUser = window.authSystem?.getCurrentUser();
+
+		// Find assignee name from email
+		const assigneeEmail = formData.get("assignee");
+		const users = [
+			{ name: "Admin User", email: "admin@studyhall.com" },
+			{ name: "Sarah Johnson", email: "hr@studyhall.com" },
+			{ name: "Mike Chen", email: "manager@studyhall.com" },
+		];
+		const assignee =
+			users.find((u) => u.email === assigneeEmail)?.name || assigneeEmail;
+
+		const newTask = {
+			id: this.taskIdCounter++,
+			title: formData.get("title"),
+			description: formData.get("description") || "",
+			assignee: assignee,
+			assigneeEmail: assigneeEmail,
+			dueDate: formData.get("dueDate") || null,
+			priority: formData.get("priority") || "medium",
+			status: "pending",
+			category: formData.get("category") || "General",
+			createdAt: new Date().toISOString(),
+			createdBy: currentUser?.name || "Unknown User",
+		};
+
+		this.tasks.push(newTask);
+		this.saveTasks();
+		this.refreshTasksView();
+		this.closeModal();
+		this.showNotification("Task created successfully!", "success");
+
+		// Refresh dashboard if on dashboard view
+		if (
+			document.getElementById("dashboard-view")?.classList.contains("active")
+		) {
+			this.renderDashboard();
+		}
+	}
+
+	updateTask(form, taskId) {
+		const formData = new FormData(form);
+		const taskIndex = this.tasks.findIndex((t) => t.id === taskId);
+
+		if (taskIndex === -1) {
+			this.showNotification("Task not found!", "error");
+			return;
+		}
+
+		// Find assignee name from email
+		const assigneeEmail = formData.get("assignee");
+		const users = [
+			{ name: "Admin User", email: "admin@studyhall.com" },
+			{ name: "Sarah Johnson", email: "hr@studyhall.com" },
+			{ name: "Mike Chen", email: "manager@studyhall.com" },
+		];
+		const assignee =
+			users.find((u) => u.email === assigneeEmail)?.name || assigneeEmail;
+
+		// Update task
+		this.tasks[taskIndex] = {
+			...this.tasks[taskIndex],
+			title: formData.get("title"),
+			description: formData.get("description") || "",
+			assignee: assignee,
+			assigneeEmail: assigneeEmail,
+			dueDate: formData.get("dueDate") || null,
+			priority: formData.get("priority") || "medium",
+			category: formData.get("category") || "General",
+			updatedAt: new Date().toISOString(),
+		};
+
+		this.saveTasks();
+		this.refreshTasksView();
+		this.closeModal();
+		this.showNotification("Task updated successfully!", "success");
+
+		// Refresh dashboard if on dashboard view
+		if (
+			document.getElementById("dashboard-view")?.classList.contains("active")
+		) {
+			this.renderDashboard();
+		}
+	}
+
+	deleteTask(taskId) {
+		if (confirm("Are you sure you want to delete this task?")) {
+			this.tasks = this.tasks.filter((t) => t.id !== taskId);
+			this.saveTasks();
+			this.refreshTasksView();
+			this.showNotification("Task deleted successfully!", "success");
+
+			// Refresh dashboard if on dashboard view
+			if (
+				document.getElementById("dashboard-view")?.classList.contains("active")
+			) {
+				this.renderDashboard();
+			}
+		}
+	}
+
+	toggleTaskStatus(taskId) {
+		const task = this.tasks.find((t) => t.id === taskId);
+		if (task) {
+			task.status = task.status === "completed" ? "pending" : "completed";
+			task.completedAt =
+				task.status === "completed" ? new Date().toISOString() : null;
+			this.saveTasks();
+			this.refreshTasksView();
+			this.showNotification(`Task marked as ${task.status}!`, "success");
+
+			// Refresh dashboard if on dashboard view
+			if (
+				document.getElementById("dashboard-view")?.classList.contains("active")
+			) {
+				this.renderDashboard();
+			}
+		}
+	}
+
+	refreshTasksView() {
+		const tasksContainer = document.querySelector(".tasks-container");
+		if (tasksContainer) {
+			this.renderTasks();
+		}
+	}
+
+	renderTasks() {
+		const tasksContainer = document.querySelector(".tasks-container");
+		if (!tasksContainer) return;
+
+		tasksContainer.innerHTML = this.tasks
+			.map((task) => {
+				const dueDate = task.dueDate
+					? new Date(task.dueDate).toLocaleDateString()
+					: "No due date";
+				const isOverdue =
+					task.dueDate &&
+					new Date(task.dueDate) < new Date() &&
+					task.status !== "completed";
+
+				return `
+				<div class="task-item ${task.status === "completed" ? "completed" : ""} ${
+					isOverdue ? "overdue" : ""
+				}">
+					<div class="task-checkbox ${task.status === "completed" ? "checked" : ""}" 
+						 onclick="studyHallApp.toggleTaskStatus(${task.id})">
+						${task.status === "completed" ? "✓" : ""}
+					</div>
+					<div class="task-content">
+						<div class="task-title">${task.title}</div>
+						<div class="task-description">${task.description}</div>
+						<div class="task-meta">
+							<span class="task-assignee">👤 ${task.assignee}</span>
+							<span class="task-due ${isOverdue ? "overdue" : ""}">📅 ${dueDate}</span>
+							<span class="task-category">📂 ${task.category}</span>
+						</div>
+					</div>
+					<div class="task-priority priority-${task.priority}">${
+					task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
+				}</div>
+					<div class="task-actions">
+						<button class="task-action-btn" onclick="studyHallApp.showTaskModal(${
+							task.id
+						})" title="Edit Task">
+							✏️
+						</button>
+						<button class="task-action-btn danger" onclick="studyHallApp.deleteTask(${
+							task.id
+						})" title="Delete Task">
+							🗑️
+						</button>
+					</div>
+				</div>
+			`;
+			})
+			.join("");
+	}
+
+	closeModal() {
+		const modal = document.querySelector(".modal-overlay");
+		if (modal) {
+			modal.remove();
 		}
 	}
 
