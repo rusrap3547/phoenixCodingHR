@@ -12,7 +12,18 @@
 			<!-- Sidebar Navigation -->
 			<aside class="sidebar" id="sidebar">
 				<div class="sidebar-header">
-					<h1 class="app-logo">Phoenix HR</h1>
+					<div class="workspace-selector">
+						<div class="workspace-info">
+							<div class="workspace-avatar">🏢</div>
+							<div class="workspace-details">
+								<h1 class="workspace-name">Phoenix HR</h1>
+								<span class="workspace-plan">Premium</span>
+							</div>
+						</div>
+						<button class="workspace-dropdown" aria-label="Switch workspace">
+							<span class="dropdown-icon">⌄</span>
+						</button>
+					</div>
 					<button
 						class="sidebar-toggle"
 						id="sidebarToggle"
@@ -23,54 +34,123 @@
 				</div>
 
 				<nav class="sidebar-nav" aria-label="Main navigation">
-					<ul class="nav-list">
-						<li>
-							<a
-								href="#dashboard"
-								class="nav-item active"
-								data-view="dashboard"
+					<!-- Quick Actions -->
+					<div class="sidebar-section">
+						<button class="create-button" id="createDashboard">
+							<span class="create-icon">+</span>
+							<span class="create-text">Create Dashboard</span>
+						</button>
+					</div>
+
+					<!-- Favorites -->
+					<div class="sidebar-section">
+						<div class="section-header">
+							<button class="section-toggle" data-section="favorites">
+								<span class="toggle-icon">▼</span>
+								<span class="section-title">Favorites</span>
+							</button>
+						</div>
+						<ul class="nav-list" data-section-content="favorites">
+							<li>
+								<a
+									href="#dashboard"
+									class="nav-item active"
+									data-view="dashboard"
+								>
+									<span class="nav-icon">⭐</span>
+									<span class="nav-text">Main Dashboard</span>
+								</a>
+							</li>
+							<li>
+								<a href="#tasks" class="nav-item" data-view="tasks">
+									<span class="nav-icon">✅</span>
+									<span class="nav-text">My Tasks</span>
+								</a>
+							</li>
+						</ul>
+					</div>
+
+					<!-- Dashboards -->
+					<div class="sidebar-section">
+						<div class="section-header">
+							<button class="section-toggle" data-section="dashboards">
+								<span class="toggle-icon">▼</span>
+								<span class="section-title">Dashboards</span>
+							</button>
+							<button
+								class="section-action"
+								id="addDashboard"
+								title="Add Dashboard"
 							>
-								<span class="nav-icon">📊</span>
-								<span class="nav-text">Dashboard</span>
-							</a>
-						</li>
-						<li>
-							<a href="#projects" class="nav-item" data-view="projects">
-								<span class="nav-icon">📋</span>
-								<span class="nav-text">Projects</span>
-							</a>
-						</li>
-						<li>
-							<a href="#tasks" class="nav-item" data-view="tasks">
-								<span class="nav-icon">✅</span>
-								<span class="nav-text">Tasks</span>
-							</a>
-						</li>
-						<li>
-							<a href="#people" class="nav-item" data-view="people">
-								<span class="nav-icon">👥</span>
-								<span class="nav-text">People</span>
-							</a>
-						</li>
-						<li>
-							<a href="#calendar" class="nav-item" data-view="calendar">
-								<span class="nav-icon">📅</span>
-								<span class="nav-text">Calendar</span>
-							</a>
-						</li>
-						<li>
-							<a href="#documents" class="nav-item" data-view="documents">
-								<span class="nav-icon">📄</span>
-								<span class="nav-text">Documents</span>
-							</a>
-						</li>
-						<li>
-							<a href="#reports" class="nav-item" data-view="reports">
-								<span class="nav-icon">📈</span>
-								<span class="nav-text">Reports</span>
-							</a>
-						</li>
-					</ul>
+								<span class="action-icon">+</span>
+							</button>
+						</div>
+						<ul class="nav-list" data-section-content="dashboards">
+							<li>
+								<a href="#dashboard" class="nav-item" data-view="dashboard">
+									<span class="nav-icon">📊</span>
+									<span class="nav-text">Overview</span>
+									<button class="item-options" title="Dashboard options">
+										⋯
+									</button>
+								</a>
+							</li>
+							<li>
+								<a href="#projects" class="nav-item" data-view="projects">
+									<span class="nav-icon">📋</span>
+									<span class="nav-text">HR Projects</span>
+									<button class="item-options" title="Dashboard options">
+										⋯
+									</button>
+								</a>
+							</li>
+							<li>
+								<a href="#reports" class="nav-item" data-view="reports">
+									<span class="nav-icon">📈</span>
+									<span class="nav-text">Analytics</span>
+									<button class="item-options" title="Dashboard options">
+										⋯
+									</button>
+								</a>
+							</li>
+						</ul>
+					</div>
+
+					<!-- Spaces -->
+					<div class="sidebar-section">
+						<div class="section-header">
+							<button class="section-toggle" data-section="spaces">
+								<span class="toggle-icon">▼</span>
+								<span class="section-title">Spaces</span>
+							</button>
+							<button class="section-action" id="addSpace" title="Add Space">
+								<span class="action-icon">+</span>
+							</button>
+						</div>
+						<ul class="nav-list" data-section-content="spaces">
+							<li>
+								<a href="#people" class="nav-item" data-view="people">
+									<span class="nav-icon">�</span>
+									<span class="nav-text">People</span>
+									<button class="item-options" title="Space options">⋯</button>
+								</a>
+							</li>
+							<li>
+								<a href="#calendar" class="nav-item" data-view="calendar">
+									<span class="nav-icon">�</span>
+									<span class="nav-text">Calendar</span>
+									<button class="item-options" title="Space options">⋯</button>
+								</a>
+							</li>
+							<li>
+								<a href="#documents" class="nav-item" data-view="documents">
+									<span class="nav-icon">�</span>
+									<span class="nav-text">Documents</span>
+									<button class="item-options" title="Space options">⋯</button>
+								</a>
+							</li>
+						</ul>
+					</div>
 
 					<div class="sidebar-footer">
 						<div class="user-profile">
@@ -79,6 +159,7 @@
 								<div class="user-name">Admin User</div>
 								<div class="user-role">HR Manager</div>
 							</div>
+							<button class="profile-options" title="Profile options">⋯</button>
 						</div>
 					</div>
 				</nav>
@@ -292,6 +373,22 @@
 			</main>
 		</div>
 
-		<script type="module" src="src/app.js"></script>
+		<script src="src/app.js"></script>
+		<script>
+			// Debug script to check if JS is working
+			console.log("Debug: HTML loaded, checking for elements...");
+			document.addEventListener("DOMContentLoaded", () => {
+				console.log("Debug: DOM Content Loaded");
+				const createBtn = document.getElementById("createDashboard");
+				console.log("Debug: Create button found:", createBtn);
+				if (createBtn) {
+					console.log("Debug: Adding click listener to create button");
+					createBtn.addEventListener("click", () => {
+						console.log("Debug: Create button clicked directly!");
+						alert("Create button works!");
+					});
+				}
+			});
+		</script>
 	</body>
 </html>
