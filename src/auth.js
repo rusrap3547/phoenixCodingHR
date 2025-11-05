@@ -1,4 +1,4 @@
-// Phoenix HR Authentication System
+// The Study Hall Authentication System
 // Handles login, logout, and session management
 
 class AuthSystem {
@@ -12,21 +12,21 @@ class AuthSystem {
 				department: "HR Director",
 			},
 			{
-				email: "admin@phoenixhr.com",
-				password: "phoenix2025!",
+				email: "admin@studyhall.com",
+				password: "study2025!",
 				name: "Admin User",
 				role: "HR Manager",
 				department: "Human Resources",
 			},
 			{
-				email: "hr@phoenixhr.com",
+				email: "hr@studyhall.com",
 				password: "hr123secure",
 				name: "Sarah Johnson",
 				role: "HR Specialist",
 				department: "Human Resources",
 			},
 			{
-				email: "manager@phoenixhr.com",
+				email: "manager@studyhall.com",
 				password: "mgr456pass",
 				name: "Mike Chen",
 				role: "Department Manager",
@@ -34,7 +34,7 @@ class AuthSystem {
 			},
 		];
 
-		this.sessionKey = "phoenix-hr-session";
+		this.sessionKey = "study-hall-session";
 		this.init();
 	}
 

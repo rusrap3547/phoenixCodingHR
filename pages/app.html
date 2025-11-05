@@ -3,7 +3,7 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Phoenix HR - Dashboard</title>
+		<title>The Study Hall - Dashboard</title>
 		<link rel="stylesheet" href="../designs/style.css/style.css" />
 	</head>
 	<body class="app-body">
@@ -14,9 +14,9 @@
 				<div class="sidebar-header">
 					<div class="workspace-selector">
 						<div class="workspace-info">
-							<div class="workspace-avatar">🏢</div>
+							<div class="workspace-avatar">📚</div>
 							<div class="workspace-details">
-								<h1 class="workspace-name">Phoenix HR</h1>
+								<h1 class="workspace-name">The Study Hall</h1>
 								<span class="workspace-plan">Premium</span>
 							</div>
 						</div>
@@ -147,6 +147,46 @@
 									<span class="nav-icon">�</span>
 									<span class="nav-text">Documents</span>
 									<button class="item-options" title="Space options">⋯</button>
+								</a>
+							</li>
+						</ul>
+					</div>
+
+					<!-- Admin Section (Role-Based Visibility) -->
+					<div
+						class="sidebar-section admin-section"
+						id="adminSection"
+						style="display: none"
+					>
+						<div class="section-header">
+							<button class="section-toggle" data-section="admin">
+								<span class="toggle-icon">▼</span>
+								<span class="section-title">Administration</span>
+							</button>
+						</div>
+						<ul class="nav-list" data-section-content="admin">
+							<li>
+								<a href="#roles" class="nav-item" data-view="roles">
+									<span class="nav-icon">🔐</span>
+									<span class="nav-text">Roles & Permissions</span>
+								</a>
+							</li>
+							<li>
+								<a href="#users" class="nav-item" data-view="users">
+									<span class="nav-icon">👥</span>
+									<span class="nav-text">User Management</span>
+								</a>
+							</li>
+							<li>
+								<a href="#audit" class="nav-item" data-view="audit">
+									<span class="nav-icon">📋</span>
+									<span class="nav-text">Audit Logs</span>
+								</a>
+							</li>
+							<li>
+								<a href="#settings" class="nav-item" data-view="settings">
+									<span class="nav-icon">⚙️</span>
+									<span class="nav-text">System Settings</span>
 								</a>
 							</li>
 						</ul>
@@ -405,6 +445,474 @@
 					<div class="view reports-view" id="reports-view">
 						<h3>Reports & Analytics</h3>
 						<p>Reporting dashboard coming soon...</p>
+					</div>
+
+					<!-- Roles & Permissions View (Admin Only) -->
+					<div class="view roles-view" id="roles-view">
+						<div class="view-header">
+							<h3>Roles & Permissions</h3>
+							<div class="view-controls">
+								<button class="btn btn-outline" id="exportRolesBtn">
+									<span class="btn-icon">📥</span>
+									Export Roles
+								</button>
+								<button class="btn btn-primary" id="addRoleBtn">
+									+ Add Role
+								</button>
+							</div>
+						</div>
+
+						<div class="roles-container">
+							<div class="roles-grid">
+								<!-- HR Manager Role -->
+								<div class="role-card" data-role-id="hr-manager">
+									<div class="role-header">
+										<div class="role-info">
+											<h4 class="role-name">HR Manager</h4>
+											<span class="role-level admin">Administrator</span>
+										</div>
+										<button class="role-actions" title="Role options">⋯</button>
+									</div>
+									<div class="role-description">
+										Full access to HR systems, user management, and
+										administrative functions.
+									</div>
+									<div class="role-permissions">
+										<div class="permission-category">
+											<h5>User Management</h5>
+											<div class="permission-items">
+												<span class="permission-item active">Create Users</span>
+												<span class="permission-item active">Edit Users</span>
+												<span class="permission-item active">Delete Users</span>
+												<span class="permission-item active">Manage Roles</span>
+											</div>
+										</div>
+										<div class="permission-category">
+											<h5>System Access</h5>
+											<div class="permission-items">
+												<span class="permission-item active">Admin Panel</span>
+												<span class="permission-item active">Audit Logs</span>
+												<span class="permission-item active"
+													>System Settings</span
+												>
+											</div>
+										</div>
+									</div>
+									<div class="role-stats">
+										<span class="user-count">2 users</span>
+									</div>
+								</div>
+
+								<!-- HR Specialist Role -->
+								<div class="role-card" data-role-id="hr-specialist">
+									<div class="role-header">
+										<div class="role-info">
+											<h4 class="role-name">HR Specialist</h4>
+											<span class="role-level standard">Standard</span>
+										</div>
+										<button class="role-actions" title="Role options">⋯</button>
+									</div>
+									<div class="role-description">
+										Access to HR functions with limited administrative
+										capabilities.
+									</div>
+									<div class="role-permissions">
+										<div class="permission-category">
+											<h5>User Management</h5>
+											<div class="permission-items">
+												<span class="permission-item active">View Users</span>
+												<span class="permission-item active">Edit Users</span>
+												<span class="permission-item disabled"
+													>Delete Users</span
+												>
+												<span class="permission-item disabled"
+													>Manage Roles</span
+												>
+											</div>
+										</div>
+										<div class="permission-category">
+											<h5>System Access</h5>
+											<div class="permission-items">
+												<span class="permission-item disabled"
+													>Admin Panel</span
+												>
+												<span class="permission-item active">View Reports</span>
+												<span class="permission-item disabled"
+													>System Settings</span
+												>
+											</div>
+										</div>
+									</div>
+									<div class="role-stats">
+										<span class="user-count">5 users</span>
+									</div>
+								</div>
+
+								<!-- Department Manager Role -->
+								<div class="role-card" data-role-id="dept-manager">
+									<div class="role-header">
+										<div class="role-info">
+											<h4 class="role-name">Department Manager</h4>
+											<span class="role-level limited">Limited</span>
+										</div>
+										<button class="role-actions" title="Role options">⋯</button>
+									</div>
+									<div class="role-description">
+										Department-specific access with team management
+										capabilities.
+									</div>
+									<div class="role-permissions">
+										<div class="permission-category">
+											<h5>Team Management</h5>
+											<div class="permission-items">
+												<span class="permission-item active">View Team</span>
+												<span class="permission-item active">Team Reports</span>
+												<span class="permission-item disabled">Hire/Fire</span>
+												<span class="permission-item disabled"
+													>Salary Changes</span
+												>
+											</div>
+										</div>
+										<div class="permission-category">
+											<h5>System Access</h5>
+											<div class="permission-items">
+												<span class="permission-item disabled"
+													>Admin Panel</span
+												>
+												<span class="permission-item active">Dashboard</span>
+												<span class="permission-item disabled"
+													>Global Settings</span
+												>
+											</div>
+										</div>
+									</div>
+									<div class="role-stats">
+										<span class="user-count">8 users</span>
+									</div>
+								</div>
+
+								<!-- Employee Role -->
+								<div class="role-card" data-role-id="employee">
+									<div class="role-header">
+										<div class="role-info">
+											<h4 class="role-name">Employee</h4>
+											<span class="role-level basic">Basic</span>
+										</div>
+										<button class="role-actions" title="Role options">⋯</button>
+									</div>
+									<div class="role-description">
+										Standard employee access to personal information and basic
+										features.
+									</div>
+									<div class="role-permissions">
+										<div class="permission-category">
+											<h5>Personal Access</h5>
+											<div class="permission-items">
+												<span class="permission-item active">Profile</span>
+												<span class="permission-item active">Time Off</span>
+												<span class="permission-item active">Payslips</span>
+												<span class="permission-item disabled"
+													>Others' Data</span
+												>
+											</div>
+										</div>
+										<div class="permission-category">
+											<h5>System Access</h5>
+											<div class="permission-items">
+												<span class="permission-item disabled"
+													>Admin Panel</span
+												>
+												<span class="permission-item active">Dashboard</span>
+												<span class="permission-item disabled"
+													>Management Tools</span
+												>
+											</div>
+										</div>
+									</div>
+									<div class="role-stats">
+										<span class="user-count">45 users</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- User Management View (Admin Only) -->
+					<div class="view users-view" id="users-view">
+						<div class="view-header">
+							<h3>User Management</h3>
+							<div class="view-controls">
+								<input
+									type="search"
+									placeholder="Search users..."
+									class="search-input"
+								/>
+								<select class="role-filter">
+									<option value="">All Roles</option>
+									<option value="hr-manager">HR Manager</option>
+									<option value="hr-specialist">HR Specialist</option>
+									<option value="dept-manager">Department Manager</option>
+									<option value="employee">Employee</option>
+								</select>
+								<button class="btn btn-primary" id="addUserBtn">
+									+ Add User
+								</button>
+							</div>
+						</div>
+
+						<div class="users-table-container">
+							<table class="users-table">
+								<thead>
+									<tr>
+										<th>User</th>
+										<th>Role</th>
+										<th>Department</th>
+										<th>Status</th>
+										<th>Last Login</th>
+										<th>Actions</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr class="user-row" data-user-id="admin">
+										<td class="user-cell">
+											<div class="user-avatar">👤</div>
+											<div class="user-details">
+												<div class="user-name">Admin User</div>
+												<div class="user-email">admin@studyhall.com</div>
+											</div>
+										</td>
+										<td>
+											<span class="role-badge admin">HR Manager</span>
+										</td>
+										<td>Human Resources</td>
+										<td>
+											<span class="status-badge active">Active</span>
+										</td>
+										<td>2 hours ago</td>
+										<td>
+											<button class="action-btn" title="Edit user">✏️</button>
+											<button class="action-btn" title="Reset password">
+												🔑
+											</button>
+											<button class="action-btn danger" title="Suspend user">
+												⏸️
+											</button>
+										</td>
+									</tr>
+									<tr class="user-row" data-user-id="sarah">
+										<td class="user-cell">
+											<div class="user-avatar">👤</div>
+											<div class="user-details">
+												<div class="user-name">Sarah Johnson</div>
+												<div class="user-email">hr@studyhall.com</div>
+											</div>
+										</td>
+										<td>
+											<span class="role-badge standard">HR Specialist</span>
+										</td>
+										<td>Human Resources</td>
+										<td>
+											<span class="status-badge active">Active</span>
+										</td>
+										<td>5 hours ago</td>
+										<td>
+											<button class="action-btn" title="Edit user">✏️</button>
+											<button class="action-btn" title="Reset password">
+												🔑
+											</button>
+											<button class="action-btn danger" title="Suspend user">
+												⏸️
+											</button>
+										</td>
+									</tr>
+									<tr class="user-row" data-user-id="mike">
+										<td class="user-cell">
+											<div class="user-avatar">👤</div>
+											<div class="user-details">
+												<div class="user-name">Mike Chen</div>
+												<div class="user-email">manager@studyhall.com</div>
+											</div>
+										</td>
+										<td>
+											<span class="role-badge limited">Department Manager</span>
+										</td>
+										<td>Operations</td>
+										<td>
+											<span class="status-badge active">Active</span>
+										</td>
+										<td>1 day ago</td>
+										<td>
+											<button class="action-btn" title="Edit user">✏️</button>
+											<button class="action-btn" title="Reset password">
+												🔑
+											</button>
+											<button class="action-btn danger" title="Suspend user">
+												⏸️
+											</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+
+					<!-- Audit Logs View (Admin Only) -->
+					<div class="view audit-view" id="audit-view">
+						<div class="view-header">
+							<h3>Audit Logs</h3>
+							<div class="view-controls">
+								<input type="date" class="date-filter" value="2025-11-05" />
+								<select class="action-filter">
+									<option value="">All Actions</option>
+									<option value="login">Login</option>
+									<option value="user_create">User Created</option>
+									<option value="role_change">Role Changed</option>
+									<option value="permission_change">Permission Changed</option>
+								</select>
+								<button class="btn btn-outline">Export Logs</button>
+							</div>
+						</div>
+
+						<div class="audit-logs">
+							<div class="log-entry">
+								<div class="log-time">2025-11-05 14:23:15</div>
+								<div class="log-user">
+									<div class="user-avatar small">👤</div>
+									<span>Admin User</span>
+								</div>
+								<div class="log-action">
+									<span class="action-type login">User Login</span>
+									<span class="log-details"
+										>Successful login from 192.168.1.100</span
+									>
+								</div>
+								<div class="log-status success">Success</div>
+							</div>
+							<div class="log-entry">
+								<div class="log-time">2025-11-05 13:45:32</div>
+								<div class="log-user">
+									<div class="user-avatar small">👤</div>
+									<span>Admin User</span>
+								</div>
+								<div class="log-action">
+									<span class="action-type role_change">Role Modified</span>
+									<span class="log-details"
+										>Changed Sarah Johnson's role from Employee to HR
+										Specialist</span
+									>
+								</div>
+								<div class="log-status success">Success</div>
+							</div>
+							<div class="log-entry">
+								<div class="log-time">2025-11-05 12:15:07</div>
+								<div class="log-user">
+									<div class="user-avatar small">👤</div>
+									<span>Sarah Johnson</span>
+								</div>
+								<div class="log-action">
+									<span class="action-type permission_change"
+										>Permission Denied</span
+									>
+									<span class="log-details"
+										>Attempted to access admin panel without sufficient
+										privileges</span
+									>
+								</div>
+								<div class="log-status warning">Warning</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- System Settings View (Admin Only) -->
+					<div class="view settings-view" id="settings-view">
+						<div class="view-header">
+							<h3>System Settings</h3>
+							<button class="btn btn-primary" id="saveSystemSettings">
+								Save Changes
+							</button>
+						</div>
+
+						<div class="settings-sections">
+							<div class="settings-section">
+								<h4>Security Settings</h4>
+								<div class="setting-item">
+									<label class="setting-label">
+										<input type="checkbox" checked />
+										<span class="checkbox-custom"></span>
+										Require two-factor authentication for admins
+									</label>
+								</div>
+								<div class="setting-item">
+									<label class="setting-label">
+										<input type="checkbox" />
+										<span class="checkbox-custom"></span>
+										Force password reset every 90 days
+									</label>
+								</div>
+								<div class="setting-item">
+									<label>Session timeout (minutes)</label>
+									<input
+										type="number"
+										value="480"
+										min="15"
+										max="1440"
+										class="setting-input"
+									/>
+								</div>
+							</div>
+
+							<div class="settings-section">
+								<h4>Access Control</h4>
+								<div class="setting-item">
+									<label>Maximum login attempts</label>
+									<input
+										type="number"
+										value="5"
+										min="1"
+										max="10"
+										class="setting-input"
+									/>
+								</div>
+								<div class="setting-item">
+									<label>Account lockout duration (minutes)</label>
+									<input
+										type="number"
+										value="30"
+										min="5"
+										max="1440"
+										class="setting-input"
+									/>
+								</div>
+							</div>
+
+							<div class="settings-section">
+								<h4>Audit & Logging</h4>
+								<div class="setting-item">
+									<label class="setting-label">
+										<input type="checkbox" checked />
+										<span class="checkbox-custom"></span>
+										Log all user actions
+									</label>
+								</div>
+								<div class="setting-item">
+									<label class="setting-label">
+										<input type="checkbox" checked />
+										<span class="checkbox-custom"></span>
+										Log failed login attempts
+									</label>
+								</div>
+								<div class="setting-item">
+									<label>Log retention period (days)</label>
+									<input
+										type="number"
+										value="365"
+										min="30"
+										max="2555"
+										class="setting-input"
+									/>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</main>

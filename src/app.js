@@ -1,7 +1,7 @@
-// Phoenix HR App - Main Application Logic
+// The Study Hall App - Main Application Logic
 // Handles routing, navigation, and app state management
 
-class PhoenixHRApp {
+class StudyHallApp {
 	constructor() {
 		this.currentView = "dashboard";
 		this.sidebarCollapsed = false;
@@ -19,7 +19,7 @@ class PhoenixHRApp {
 	// Dashboard persistence methods
 	loadDashboards() {
 		try {
-			const saved = localStorage.getItem("phoenix-hr-dashboards");
+			const saved = localStorage.getItem("study-hall-dashboards");
 			if (saved) {
 				const dashboards = JSON.parse(saved);
 				console.log("Loaded dashboards from localStorage:", dashboards);
@@ -40,7 +40,7 @@ class PhoenixHRApp {
 	saveDashboards() {
 		try {
 			localStorage.setItem(
-				"phoenix-hr-dashboards",
+				"study-hall-dashboards",
 				JSON.stringify(this.dashboards)
 			);
 			console.log("Dashboards saved to localStorage");
@@ -50,7 +50,7 @@ class PhoenixHRApp {
 	}
 
 	init() {
-		console.log("PhoenixHRApp initializing...");
+		console.log("StudyHallApp initializing...");
 
 		// Initialize authentication and user info
 		this.initializeUser();
@@ -60,7 +60,7 @@ class PhoenixHRApp {
 		this.updatePageTitle();
 		this.initializeSectionStates();
 		this.initializeSavedDashboards();
-		console.log("PhoenixHRApp initialized successfully!");
+		console.log("StudyHallApp initialized successfully!");
 	}
 
 	bindEvents() {
@@ -223,6 +223,7 @@ class PhoenixHRApp {
 		if (user) {
 			this.updateUserInterface(user);
 			this.bindUserMenuEvents();
+			this.applyRoleBasedVisibility(user);
 		}
 
 		console.log("User initialized:", user?.name);
@@ -325,6 +326,101 @@ class PhoenixHRApp {
 				window.location.href = "login.html";
 			}
 		}
+	}
+
+	// Role-Based Access Control
+	applyRoleBasedVisibility(user) {
+		const adminSection = document.getElementById("adminSection");
+
+		// Define roles with admin access
+		const adminRoles = ["HR Manager", "Admin", "Administrator"];
+		const hasAdminAccess = adminRoles.includes(user.role);
+
+		// Show/hide admin section based on role
+		if (adminSection) {
+			if (hasAdminAccess) {
+				adminSection.style.display = "block";
+				console.log(`Admin section visible for role: ${user.role}`);
+			} else {
+				adminSection.style.display = "none";
+				console.log(`Admin section hidden for role: ${user.role}`);
+			}
+		}
+
+		// Store user permissions for later use
+		this.userPermissions = this.getRolePermissions(user.role);
+		console.log("User permissions:", this.userPermissions);
+	}
+
+	getRolePermissions(role) {
+		const permissions = {
+			"HR Manager": {
+				canManageUsers: true,
+				canManageRoles: true,
+				canViewAuditLogs: true,
+				canManageSystemSettings: true,
+				canAccessAdminPanel: true,
+				canCreateUsers: true,
+				canDeleteUsers: true,
+				canExportData: true,
+			},
+			"HR Specialist": {
+				canManageUsers: false,
+				canManageRoles: false,
+				canViewAuditLogs: false,
+				canManageSystemSettings: false,
+				canAccessAdminPanel: false,
+				canCreateUsers: false,
+				canDeleteUsers: false,
+				canExportData: true,
+			},
+			"Department Manager": {
+				canManageUsers: false,
+				canManageRoles: false,
+				canViewAuditLogs: false,
+				canManageSystemSettings: false,
+				canAccessAdminPanel: false,
+				canCreateUsers: false,
+				canDeleteUsers: false,
+				canExportData: false,
+			},
+			Employee: {
+				canManageUsers: false,
+				canManageRoles: false,
+				canViewAuditLogs: false,
+				canManageSystemSettings: false,
+				canAccessAdminPanel: false,
+				canCreateUsers: false,
+				canDeleteUsers: false,
+				canExportData: false,
+			},
+		};
+
+		return permissions[role] || permissions["Employee"];
+	}
+
+	hasPermission(permission) {
+		return this.userPermissions && this.userPermissions[permission] === true;
+	}
+
+	// Navigation with permission checking
+	navigateToView(viewName) {
+		// Check if user has permission to access admin views
+		const adminViews = ["roles", "users", "audit", "settings"];
+
+		if (
+			adminViews.includes(viewName) &&
+			!this.hasPermission("canAccessAdminPanel")
+		) {
+			this.showNotification(
+				"Access denied. Insufficient permissions.",
+				"error"
+			);
+			return;
+		}
+
+		// Proceed with normal navigation
+		this.showView(viewName);
 	}
 
 	toggleSection(sectionName) {
@@ -544,10 +640,10 @@ class PhoenixHRApp {
 						dashboard.description || "Custom dashboard"
 					}</p>
 					<div class="dashboard-actions">
-						<button class="btn btn-primary" onclick="phoenixApp.addWidget('${
+						<button class="btn btn-primary" onclick="studyHallApp.addWidget('${
 							dashboard.id
 						}')">+ Add Widget</button>
-						<button class="btn btn-secondary" onclick="phoenixApp.editDashboard('${
+						<button class="btn btn-secondary" onclick="studyHallApp.editDashboard('${
 							dashboard.id
 						}')">Edit Dashboard</button>
 					</div>
@@ -557,7 +653,7 @@ class PhoenixHRApp {
 						<div class="empty-icon">📊</div>
 						<h3>Your dashboard is ready!</h3>
 						<p>Start by adding some widgets to track your data.</p>
-						<button class="btn btn-primary" onclick="phoenixApp.addWidget('${
+						<button class="btn btn-primary" onclick="studyHallApp.addWidget('${
 							dashboard.id
 						}')">Add Your First Widget</button>
 					</div>
@@ -1052,7 +1148,7 @@ class PhoenixHRApp {
 			profile: window.authSystem?.getCurrentUser(),
 			dashboards: this.dashboards,
 			preferences: JSON.parse(
-				localStorage.getItem("phoenix-hr-preferences") || "{}"
+				localStorage.getItem("study-hall-preferences") || "{}"
 			),
 			exportDate: new Date().toISOString(),
 		};
@@ -1062,7 +1158,7 @@ class PhoenixHRApp {
 
 		const link = document.createElement("a");
 		link.href = URL.createObjectURL(dataBlob);
-		link.download = `phoenix-hr-data-${
+		link.download = `study-hall-data-${
 			new Date().toISOString().split("T")[0]
 		}.json`;
 		link.click();
@@ -1119,7 +1215,7 @@ class PhoenixHRApp {
 		}
 
 		// Save to localStorage
-		localStorage.setItem("phoenix-hr-preferences", JSON.stringify(preferences));
+		localStorage.setItem("study-hall-preferences", JSON.stringify(preferences));
 
 		console.log("Preferences saved:", preferences);
 		this.showNotification("Preferences saved successfully!", "success");
@@ -1131,7 +1227,7 @@ class PhoenixHRApp {
 
 	resetPreferences() {
 		if (confirm("Reset all preferences to default values?")) {
-			localStorage.removeItem("phoenix-hr-preferences");
+			localStorage.removeItem("study-hall-preferences");
 			this.showNotification("Preferences reset to defaults!", "info");
 			this.closeModal();
 			// Reopen modal to show defaults
@@ -1456,7 +1552,7 @@ class PhoenixHRApp {
 			pageTitle.textContent = titleMap[viewName] || "Dashboard";
 		}
 
-		document.title = `${titleMap[viewName] || "Dashboard"} - Phoenix HR`;
+		document.title = `${titleMap[viewName] || "Dashboard"} - The Study Hall`;
 	}
 
 	toggleSidebar() {
@@ -1561,8 +1657,8 @@ class PhoenixHRApp {
 // Initialize app when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
 	console.log("DOM Content Loaded - starting app initialization");
-	window.phoenixApp = new PhoenixHRApp();
+	window.studyHallApp = new StudyHallApp();
 });
 
 // Remove export for non-module usage
-// export default PhoenixHRApp;
+// export default StudyHallApp;

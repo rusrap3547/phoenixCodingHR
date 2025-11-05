@@ -1,4 +1,4 @@
-Phoenix Coding HR — Theme and Landing Page
+The Study Hall — Theme and Landing Page
 
 What I added
 

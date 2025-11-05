@@ -1,9 +1,9 @@
-# Phoenix HR - Project Structure
+# The Study Hall - Project Structure
 
 ## 📁 Directory Organization
 
 ```
-phoenixCodingHR/
+studyHallCodingHR/
 ├── 📄 index.html                 # Landing page (marketing site)
 ├── 📄 README.md                  # Project documentation
 ├── 📁 pages/                     # All application pages
@@ -70,8 +70,8 @@ phoenixCodingHR/
 
 ## 📋 Test Accounts
 
-| Email                 | Password     | Role               |
-| --------------------- | ------------ | ------------------ |
-| admin@phoenixhr.com   | phoenix2025! | HR Manager         |
-| hr@phoenixhr.com      | hr123secure  | HR Specialist      |
-| manager@phoenixhr.com | mgr456pass   | Department Manager |
+| Email                 | Password    | Role               |
+| --------------------- | ----------- | ------------------ |
+| admin@studyhall.com   | study2025!  | HR Manager         |
+| hr@studyhall.com      | hr123secure | HR Specialist      |
+| manager@studyhall.com | mgr456pass  | Department Manager |
