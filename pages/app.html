@@ -133,6 +133,12 @@
 						</div>
 						<ul class="nav-list" data-section-content="documentation">
 							<li>
+								<a href="#documents" class="nav-item" data-view="documents">
+									<span class="nav-icon">📄</span>
+									<span class="nav-text">Documents</span>
+								</a>
+							</li>
+							<li>
 								<a href="#docs" class="nav-item" data-view="docs">
 									<span class="nav-icon">📚</span>
 									<span class="nav-text">Knowledge Base</span>
@@ -434,8 +440,157 @@
 					</div>
 
 					<div class="view documents-view" id="documents-view">
-						<h3>Documents</h3>
-						<p>Document management coming soon...</p>
+						<div class="view-header">
+							<h3>Documents</h3>
+							<div class="view-controls">
+								<button
+									class="btn btn-outline"
+									onclick="studyHallApp.showTemplateSelectionModal()"
+								>
+									<span class="btn-icon">📋</span>
+									Use Template
+								</button>
+								<button
+									class="btn btn-primary"
+									onclick="studyHallApp.showCreateDocumentModal()"
+								>
+									<span class="btn-icon">+</span>
+									New Document
+								</button>
+							</div>
+						</div>
+
+						<!-- Document Categories Tabs -->
+						<div
+							class="document-tabs"
+							style="margin-bottom: 20px; border-bottom: 2px solid #e1e5e9"
+						>
+							<button
+								class="doc-tab active"
+								onclick="studyHallApp.filterDocumentsByCategory('all')"
+								style="
+									padding: 12px 20px;
+									border: none;
+									background: none;
+									cursor: pointer;
+									border-bottom: 2px solid #007bff;
+									margin-bottom: -2px;
+									font-weight: 600;
+									color: #007bff;
+								"
+							>
+								All Documents
+							</button>
+							<button
+								class="doc-tab"
+								onclick="studyHallApp.filterDocumentsByCategory('hr-policies')"
+								style="
+									padding: 12px 20px;
+									border: none;
+									background: none;
+									cursor: pointer;
+									color: #666;
+								"
+							>
+								HR Policies
+							</button>
+							<button
+								class="doc-tab"
+								onclick="studyHallApp.filterDocumentsByCategory('company-policies')"
+								style="
+									padding: 12px 20px;
+									border: none;
+									background: none;
+									cursor: pointer;
+									color: #666;
+								"
+							>
+								Company Policies
+							</button>
+							<button
+								class="doc-tab"
+								onclick="studyHallApp.filterDocumentsByCategory('training')"
+								style="
+									padding: 12px 20px;
+									border: none;
+									background: none;
+									cursor: pointer;
+									color: #666;
+								"
+							>
+								Training
+							</button>
+							<button
+								class="doc-tab"
+								onclick="studyHallApp.filterDocumentsByCategory('templates')"
+								style="
+									padding: 12px 20px;
+									border: none;
+									background: none;
+									cursor: pointer;
+									color: #666;
+								"
+							>
+								Templates
+							</button>
+						</div>
+
+						<!-- Search Bar -->
+						<div class="search-section" style="margin-bottom: 20px">
+							<div class="search-bar">
+								<input
+									type="text"
+									id="simpleDocumentSearch"
+									class="search-input"
+									placeholder="Search documents..."
+									style="
+										width: 100%;
+										padding: 12px 16px;
+										border: 2px solid #e1e5e9;
+										border-radius: 8px;
+										font-size: 14px;
+									"
+								/>
+							</div>
+						</div>
+
+						<!-- Documents Grid -->
+						<div
+							class="simple-documents-grid"
+							id="simpleDocumentsGrid"
+							style="
+								display: grid;
+								grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+								gap: 20px;
+								padding: 10px 0;
+							"
+						>
+							<!-- Documents will be rendered here -->
+							<div class="loading-placeholder">Loading documents...</div>
+						</div>
+
+						<!-- Empty State -->
+						<div
+							id="documentsEmptyState"
+							style="
+								display: none;
+								text-align: center;
+								padding: 60px 20px;
+								color: #666;
+							"
+						>
+							<div style="font-size: 48px; margin-bottom: 20px">📄</div>
+							<h3 style="margin: 0 0 10px 0; color: #333">No documents yet</h3>
+							<p style="margin: 0 0 20px 0; color: #666">
+								Create your first document or use a template to get started
+							</p>
+							<button
+								class="btn btn-primary"
+								onclick="studyHallApp.showCreateDocumentModal()"
+							>
+								Create Document
+							</button>
+						</div>
 					</div>
 
 					<!-- Documentation Views (ITGlue Style) -->

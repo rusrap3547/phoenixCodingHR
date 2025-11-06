@@ -35,6 +35,29 @@ if (window.studyHallApp) {
 	);
 }
 
+// Test 2.5: Check if components are available
+console.log("2.5. Checking component availability...");
+console.log(
+	"- NavigationComponent:",
+	typeof NavigationComponent !== "undefined" ? "✅ Available" : "❌ Missing"
+);
+console.log(
+	"- ViewManagerComponent:",
+	typeof ViewManagerComponent !== "undefined" ? "✅ Available" : "❌ Missing"
+);
+console.log(
+	"- ModalComponent:",
+	typeof ModalComponent !== "undefined" ? "✅ Available" : "❌ Missing"
+);
+console.log(
+	"- NotificationComponent:",
+	typeof NotificationComponent !== "undefined" ? "✅ Available" : "❌ Missing"
+);
+console.log(
+	"- ComponentBase:",
+	typeof ComponentBase !== "undefined" ? "✅ Available" : "❌ Missing"
+);
+
 // Test 3: Check for JavaScript errors
 console.log("3. Checking for errors...");
 window.addEventListener("error", (e) => {
@@ -53,6 +76,17 @@ if (window.studyHallApp) {
 		console.error("❌ Manual render failed:", error);
 	}
 }
+
+// Test navigation function
+window.testNavigation = function () {
+	console.log("Testing navigation...");
+	if (window.studyHallApp && window.studyHallApp.viewManager) {
+		console.log("Calling viewManager.navigateToView('tasks')");
+		window.studyHallApp.viewManager.navigateToView("tasks");
+	} else {
+		console.log("ViewManager not available");
+	}
+};
 
 console.log("=== Debug Test Complete ===");
 console.log(

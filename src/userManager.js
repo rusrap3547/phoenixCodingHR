@@ -374,4 +374,8 @@ export class UserManager {
 	getInactiveUsers() {
 		return this.authSystem.authorizedUsers.filter((u) => u.status !== "active");
 	}
+
+	getAllUsers() {
+		return this.authSystem.authorizedUsers;
+	}
 }

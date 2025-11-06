@@ -3,6 +3,10 @@
 
 export class ViewManagerComponent {
 	constructor(options = {}) {
+		console.log(
+			"ViewManagerComponent constructor called with options:",
+			options
+		);
 		this.options = {
 			container: options.container || "#contentArea",
 			defaultView: options.defaultView || "dashboard",
@@ -156,7 +160,7 @@ export class ViewManagerComponent {
 		await this.applyTransition(viewElement, "show");
 
 		// Mark as active
-		viewElement.classList.add("view-active");
+		viewElement.classList.add("active");
 
 		// Update navigation state
 		this.updateNavigationState(viewName);
@@ -174,7 +178,7 @@ export class ViewManagerComponent {
 		await this.applyTransition(viewElement, "hide");
 
 		// Remove active state
-		viewElement.classList.remove("view-active");
+		viewElement.classList.remove("active");
 	}
 
 	// Get view element by name

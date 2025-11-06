@@ -3,6 +3,8 @@
  * Handles all task-related UI components and interactions
  */
 
+import { ModalComponent } from "./components/ModalComponent.js";
+
 export class TaskUIManager {
 	constructor(taskManager, authSystem, userManager) {
 		this.taskManager = taskManager;
@@ -984,217 +986,229 @@ export class TaskUIManager {
 		const users = this.userManager?.getAllUsers() || [];
 		const allTasks = this.taskManager.tasks.filter((t) => t.id !== taskId); // Exclude current task from dependencies
 
-		const modal = document.createElement("div");
-		modal.className = "modal-overlay task-modal-overlay";
-		modal.innerHTML = `
-			<div class="modal-content task-modal-content">
-				<div class="modal-header">
-					<h2>${isEditing ? "Edit Task" : "Create New Task"}</h2>
-					<button class="modal-close" onclick="this.closest('.modal-overlay').remove()">&times;</button>
+		const formContent = `
+			<div class="form-grid">
+				<!-- Basic Information -->
+				<div class="form-section">
+					<h3>Basic Information</h3>
+					
+					<div class="form-group">
+						<label for="taskTitle">Task Title *</label>
+						<input type="text" id="taskTitle" name="title" required 
+							   value="${task?.title || ""}" placeholder="Enter task title">
+					</div>
+
+					<div class="form-group">
+						<label for="taskDescription">Description</label>
+						<textarea id="taskDescription" name="description" rows="4" 
+								  placeholder="Enter task description">${task?.description || ""}</textarea>
+					</div>
+
+					<div class="form-row">
+						<div class="form-group">
+							<label for="taskPriority">Priority</label>
+							<select id="taskPriority" name="priority">
+								<option value="LOW" ${
+									task?.priority === "LOW" ? "selected" : ""
+								}>🟢 Low</option>
+								<option value="MEDIUM" ${
+									task?.priority === "MEDIUM" ? "selected" : ""
+								}>🟡 Medium</option>
+								<option value="HIGH" ${
+									task?.priority === "HIGH" ? "selected" : ""
+								}>🟠 High</option>
+								<option value="CRITICAL" ${
+									task?.priority === "CRITICAL" ? "selected" : ""
+								}>🔴 Critical</option>
+							</select>
+						</div>
+
+						<div class="form-group">
+							<label for="taskCategory">Category</label>
+							<input type="text" id="taskCategory" name="category" 
+								   value="${task?.category || ""}" placeholder="e.g., Development, Marketing">
+						</div>
+					</div>
 				</div>
 
-				<form class="task-form" onsubmit="event.preventDefault(); taskUIManager.${
-					isEditing ? "updateTask" : "createTask"
-				}(this, ${taskId || "null"})">
-					<div class="form-grid">
-						<!-- Basic Information -->
-						<div class="form-section">
-							<h3>Basic Information</h3>
-							
-							<div class="form-group">
-								<label for="taskTitle">Task Title *</label>
-								<input type="text" id="taskTitle" name="title" required 
-									   value="${task?.title || ""}" placeholder="Enter task title">
-							</div>
+				<!-- Assignment & Timeline -->
+				<div class="form-section">
+					<h3>Assignment & Timeline</h3>
+					
+					<div class="form-group">
+						<label for="taskAssignees">Assign To</label>
+						<select id="taskAssignees" name="assignedTo" multiple>
+							${users
+								.map(
+									(user) => `
+								<option value="${user.email}" 
+										${task?.assignedTo?.includes(user.email) ? "selected" : ""}>
+									${user.name} (${user.email})
+								</option>
+							`
+								)
+								.join("")}
+						</select>
+						<small>Hold Ctrl/Cmd to select multiple users</small>
+					</div>
 
-							<div class="form-group">
-								<label for="taskDescription">Description</label>
-								<textarea id="taskDescription" name="description" rows="4" 
-										  placeholder="Enter task description">${task?.description || ""}</textarea>
-							</div>
-
-							<div class="form-row">
-								<div class="form-group">
-									<label for="taskPriority">Priority</label>
-									<select id="taskPriority" name="priority">
-										<option value="LOW" ${
-											task?.priority === "LOW" ? "selected" : ""
-										}>🟢 Low</option>
-										<option value="MEDIUM" ${
-											task?.priority === "MEDIUM" ? "selected" : ""
-										}>🟡 Medium</option>
-										<option value="HIGH" ${
-											task?.priority === "HIGH" ? "selected" : ""
-										}>🟠 High</option>
-										<option value="CRITICAL" ${
-											task?.priority === "CRITICAL" ? "selected" : ""
-										}>🔴 Critical</option>
-									</select>
-								</div>
-
-								<div class="form-group">
-									<label for="taskCategory">Category</label>
-									<input type="text" id="taskCategory" name="category" 
-										   value="${task?.category || ""}" placeholder="e.g., Development, Marketing">
-								</div>
-							</div>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="taskStartDate">Start Date</label>
+							<input type="date" id="taskStartDate" name="startDate" 
+								   value="${task?.startDate ? task.startDate.split("T")[0] : ""}">
 						</div>
 
-						<!-- Assignment & Timeline -->
-						<div class="form-section">
-							<h3>Assignment & Timeline</h3>
-							
-							<div class="form-group">
-								<label for="taskAssignees">Assign To</label>
-								<select id="taskAssignees" name="assignedTo" multiple>
-									${users
-										.map(
-											(user) => `
-										<option value="${user.email}" 
-												${task?.assignedTo?.includes(user.email) ? "selected" : ""}>
-											${user.name} (${user.email})
-										</option>
-									`
-										)
-										.join("")}
-								</select>
-								<small>Hold Ctrl/Cmd to select multiple users</small>
-							</div>
-
-							<div class="form-row">
-								<div class="form-group">
-									<label for="taskStartDate">Start Date</label>
-									<input type="date" id="taskStartDate" name="startDate" 
-										   value="${task?.startDate ? task.startDate.split("T")[0] : ""}">
-								</div>
-
-								<div class="form-group">
-									<label for="taskDueDate">Due Date</label>
-									<input type="date" id="taskDueDate" name="dueDate" 
-										   value="${task?.dueDate ? task.dueDate.split("T")[0] : ""}">
-								</div>
-							</div>
-
-							<div class="form-row">
-								<div class="form-group">
-									<label for="taskEstimatedHours">Estimated Hours</label>
-									<input type="number" id="taskEstimatedHours" name="estimatedHours" 
-										   min="0" step="0.5" value="${task?.estimatedHours || ""}"
-										   placeholder="0">
-								</div>
-
-								<div class="form-group">
-									<label for="taskProgress">Progress (%)</label>
-									<input type="number" id="taskProgress" name="progress" 
-										   min="0" max="100" value="${task?.progress || 0}">
-								</div>
-							</div>
-						</div>
-
-						<!-- Dependencies & Advanced -->
-						<div class="form-section">
-							<h3>Dependencies & Advanced</h3>
-							
-							<div class="form-group">
-								<label for="taskDependencies">Dependencies</label>
-								<select id="taskDependencies" name="dependencies" multiple>
-									${allTasks
-										.map(
-											(t) => `
-										<option value="${t.id}" 
-												${task?.dependencies?.includes(t.id) ? "selected" : ""}>
-											${t.title}
-										</option>
-									`
-										)
-										.join("")}
-								</select>
-								<small>Tasks that must be completed before this one can start</small>
-							</div>
-
-							<div class="form-group">
-								<label for="taskTags">Tags</label>
-								<input type="text" id="taskTags" name="tags" 
-									   value="${task?.tags?.join(", ") || ""}" 
-									   placeholder="urgent, review, meeting (comma separated)">
-							</div>
-
-							<div class="form-group">
-								<label>
-									<input type="checkbox" id="taskRecurring" name="isRecurring" 
-										   ${task?.isRecurring ? "checked" : ""}
-										   onchange="taskUIManager.toggleRecurringOptions(this.checked)">
-									Recurring Task
-								</label>
-							</div>
-
-							<div id="recurringOptions" class="recurring-options" 
-								 style="display: ${task?.isRecurring ? "block" : "none"}">
-								<div class="form-row">
-									<div class="form-group">
-										<label for="recurringType">Recurrence</label>
-										<select id="recurringType" name="recurringType">
-											<option value="daily" ${
-												task?.recurringType === "daily" ? "selected" : ""
-											}>Daily</option>
-											<option value="weekly" ${
-												task?.recurringType === "weekly" ? "selected" : ""
-											}>Weekly</option>
-											<option value="monthly" ${
-												task?.recurringType === "monthly" ? "selected" : ""
-											}>Monthly</option>
-											<option value="quarterly" ${
-												task?.recurringType === "quarterly" ? "selected" : ""
-											}>Quarterly</option>
-											<option value="yearly" ${
-												task?.recurringType === "yearly" ? "selected" : ""
-											}>Yearly</option>
-										</select>
-									</div>
-
-									<div class="form-group">
-										<label for="recurringInterval">Every</label>
-										<input type="number" id="recurringInterval" name="recurringInterval" 
-											   min="1" value="${task?.recurringInterval || 1}">
-									</div>
-								</div>
-
-								<div class="form-group">
-									<label for="recurringEndDate">End Date (optional)</label>
-									<input type="date" id="recurringEndDate" name="recurringEndDate" 
-										   value="${task?.recurringEndDate ? task.recurringEndDate.split("T")[0] : ""}">
-								</div>
-							</div>
+						<div class="form-group">
+							<label for="taskDueDate">Due Date</label>
+							<input type="date" id="taskDueDate" name="dueDate" 
+								   value="${task?.dueDate ? task.dueDate.split("T")[0] : ""}">
 						</div>
 					</div>
 
-					<div class="form-actions">
-						<button type="button" class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove()">
-							Cancel
-						</button>
-						${
-							isEditing
-								? `
-							<button type="button" class="btn btn-danger" onclick="taskUIManager.deleteTask(${taskId})">
-								Delete Task
-							</button>
-						`
-								: ""
-						}
-						<button type="submit" class="btn btn-primary">
-							${isEditing ? "Update Task" : "Create Task"}
-						</button>
+					<div class="form-row">
+						<div class="form-group">
+							<label for="taskEstimatedHours">Estimated Hours</label>
+							<input type="number" id="taskEstimatedHours" name="estimatedHours" 
+								   min="0" step="0.5" value="${task?.estimatedHours || ""}"
+								   placeholder="0">
+						</div>
+
+						<div class="form-group">
+							<label for="taskProgress">Progress (%)</label>
+							<input type="number" id="taskProgress" name="progress" 
+								   min="0" max="100" value="${task?.progress || 0}">
+						</div>
 					</div>
-				</form>
+				</div>
+
+				<!-- Dependencies & Advanced -->
+				<div class="form-section">
+					<h3>Dependencies & Advanced</h3>
+					
+					<div class="form-group">
+						<label for="taskDependencies">Dependencies</label>
+						<select id="taskDependencies" name="dependencies" multiple>
+							${allTasks
+								.map(
+									(t) => `
+								<option value="${t.id}" 
+											${task?.dependencies?.includes(t.id) ? "selected" : ""}>
+										${t.title}
+									</option>
+								`
+								)
+								.join("")}
+						</select>
+						<small>Tasks that must be completed before this one can start</small>
+					</div>
+
+					<div class="form-group">
+						<label for="taskTags">Tags</label>
+						<input type="text" id="taskTags" name="tags" 
+							   value="${task?.tags?.join(", ") || ""}" 
+							   placeholder="urgent, review, meeting (comma separated)">
+					</div>
+
+					<div class="form-group">
+						<label>
+							<input type="checkbox" id="taskRecurring" name="isRecurring" 
+								   ${task?.isRecurring ? "checked" : ""}
+								   onchange="taskUIManager.toggleRecurringOptions(this.checked)">
+							Recurring Task
+						</label>
+					</div>
+
+					<div id="recurringOptions" class="recurring-options" 
+						 style="display: ${task?.isRecurring ? "block" : "none"}">
+						<div class="form-row">
+							<div class="form-group">
+								<label for="recurringType">Recurrence</label>
+								<select id="recurringType" name="recurringType">
+									<option value="daily" ${
+										task?.recurringType === "daily" ? "selected" : ""
+									}>Daily</option>
+									<option value="weekly" ${
+										task?.recurringType === "weekly" ? "selected" : ""
+									}>Weekly</option>
+									<option value="monthly" ${
+										task?.recurringType === "monthly" ? "selected" : ""
+									}>Monthly</option>
+									<option value="quarterly" ${
+										task?.recurringType === "quarterly" ? "selected" : ""
+									}>Quarterly</option>
+									<option value="yearly" ${
+										task?.recurringType === "yearly" ? "selected" : ""
+									}>Yearly</option>
+								</select>
+							</div>
+
+							<div class="form-group">
+								<label for="recurringInterval">Every</label>
+								<input type="number" id="recurringInterval" name="recurringInterval" 
+									   min="1" value="${task?.recurringInterval || 1}">
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="recurringEndDate">End Date (optional)</label>
+							<input type="date" id="recurringEndDate" name="recurringEndDate" 
+								   value="${task?.recurringEndDate ? task.recurringEndDate.split("T")[0] : ""}">
+						</div>
+					</div>
+				</div>
 			</div>
 		`;
 
-		document.body.appendChild(modal);
+		const buttons = [
+			{ text: "Cancel", action: "cancel", className: "btn-secondary" },
+		];
 
-		// Focus on title input
-		setTimeout(() => {
-			modal.querySelector("#taskTitle").focus();
-		}, 100);
+		if (isEditing) {
+			buttons.push({
+				text: "Delete Task",
+				action: "delete",
+				className: "btn-danger",
+			});
+		}
+
+		buttons.push({
+			text: isEditing ? "Update Task" : "Create Task",
+			action: "submit",
+			className: "btn-primary",
+		});
+
+		ModalComponent.show(
+			isEditing ? "Edit Task" : "Create New Task",
+			`<form class="modal-form">${formContent}</form>`,
+			{
+				size: "large",
+				className: "task-modal",
+				buttons: buttons,
+				onButtonClick: (action, event, button, modal) => {
+					if (action === "delete") {
+						this.deleteTask(taskId);
+						modal.hide();
+					}
+				},
+				onSubmit: (e, modal, form) => {
+					e.preventDefault();
+					if (isEditing) {
+						this.updateTask(form, taskId);
+					} else {
+						this.createTask(form);
+					}
+					modal.hide();
+				},
+				onShow: () => {
+					// Focus on title input after modal is shown
+					setTimeout(() => {
+						const titleInput = document.getElementById("taskTitle");
+						if (titleInput) titleInput.focus();
+					}, 100);
+				},
+			}
+		);
 	}
 
 	toggleRecurringOptions(show) {
@@ -1204,7 +1218,7 @@ export class TaskUIManager {
 		}
 	}
 
-	createTask(form, taskId) {
+	createTask(form) {
 		const formData = new FormData(form);
 		const taskData = {
 			title: formData.get("title"),
@@ -1231,7 +1245,6 @@ export class TaskUIManager {
 
 		try {
 			this.taskManager.createTask(taskData);
-			form.closest(".modal-overlay").remove();
 			this.showNotification("Task created successfully!", "success");
 		} catch (error) {
 			console.error("Error creating task:", error);
@@ -1266,7 +1279,6 @@ export class TaskUIManager {
 
 		try {
 			this.taskManager.updateTask(taskId, updates);
-			form.closest(".modal-overlay").remove();
 			this.showNotification("Task updated successfully!", "success");
 		} catch (error) {
 			console.error("Error updating task:", error);
@@ -1278,7 +1290,6 @@ export class TaskUIManager {
 		if (confirm("Are you sure you want to delete this task?")) {
 			try {
 				this.taskManager.deleteTask(taskId);
-				document.querySelector(".modal-overlay").remove();
 				this.showNotification("Task deleted successfully!", "success");
 			} catch (error) {
 				console.error("Error deleting task:", error);

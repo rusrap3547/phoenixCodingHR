@@ -866,23 +866,595 @@ export class DocumentUIManager {
 
 	// Modal methods
 	showCreateDocumentModal() {
-		// TODO: Implement document creation modal
-		this.app.showNotification("Document creation modal coming soon!", "info");
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) {
+			console.error("ModalComponent not available");
+			return;
+		}
+
+		ModalComponent.form({
+			title: "Create New Document",
+			fields: [
+				{
+					name: "title",
+					label: "Document Title",
+					type: "text",
+					required: true,
+					placeholder: "Enter document title",
+				},
+				{
+					name: "description",
+					label: "Description",
+					type: "textarea",
+					placeholder: "Brief description of the document",
+				},
+				{
+					name: "category",
+					label: "Category",
+					type: "select",
+					required: true,
+					options: [
+						{ value: "hr-policies", label: "HR Policies" },
+						{ value: "company-policies", label: "Company Policies" },
+						{ value: "training", label: "Training Materials" },
+						{ value: "templates", label: "Templates" },
+						{ value: "general", label: "General" },
+					],
+					value: "general",
+				},
+				{
+					name: "type",
+					label: "Document Type",
+					type: "select",
+					options: [
+						{ value: "document", label: "Document" },
+						{ value: "policy", label: "Policy" },
+						{ value: "guide", label: "Guide" },
+						{ value: "template", label: "Template" },
+					],
+					value: "document",
+				},
+				{
+					name: "content",
+					label: "Content",
+					type: "textarea",
+					placeholder: "Enter document content (supports Markdown)",
+					rows: 10,
+				},
+				{
+					name: "tags",
+					label: "Tags (comma-separated)",
+					type: "text",
+					placeholder: "e.g., onboarding, HR, policy",
+				},
+				{
+					name: "requiresApproval",
+					label: "Requires Approval",
+					type: "checkbox",
+					value: false,
+				},
+				{
+					name: "isPublic",
+					label: "Make Public",
+					type: "checkbox",
+					value: true,
+				},
+			],
+			onSubmit: (data) => {
+				try {
+					// Process tags
+					const tags = data.tags
+						? data.tags.split(",").map((tag) => tag.trim())
+						: [];
+
+					// Create document
+					const newDocument = this.documentManager.createDocument({
+						title: data.title,
+						description: data.description,
+						category: data.category,
+						type: data.type,
+						content: data.content,
+						tags: tags,
+						requiresApproval: data.requiresApproval,
+						isPublic: data.isPublic,
+					});
+
+					this.app.showNotification(
+						`Document "${newDocument.title}" created successfully!`,
+						"success"
+					);
+
+					// Refresh document view
+					this.renderDocuments();
+					ModalComponent.close();
+				} catch (error) {
+					console.error("Error creating document:", error);
+					this.app.showNotification(
+						"Failed to create document: " + error.message,
+						"error"
+					);
+				}
+			},
+		});
 	}
 
 	showTemplateSelectionModal() {
-		// TODO: Implement template selection
-		this.app.showNotification("Template selection coming soon!", "info");
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) {
+			console.error("ModalComponent not available");
+			return;
+		}
+
+		const templates = this.documentManager.documentTemplates;
+
+		if (!templates || templates.length === 0) {
+			this.app.showNotification("No templates available", "info");
+			return;
+		}
+
+		// Build template selection HTML
+		const templatesHTML = templates
+			.map(
+				(template) => `
+			<div class="template-card" style="border: 2px solid #e1e5e9; border-radius: 8px; padding: 15px; margin-bottom: 10px; cursor: pointer; transition: all 0.3s ease;" 
+				onclick="window.studyHallApp.documentUIManager.selectTemplate(${template.id})"
+				onmouseover="this.style.borderColor='#007bff'; this.style.backgroundColor='#f8f9fa';"
+				onmouseout="this.style.borderColor='#e1e5e9'; this.style.backgroundColor='white';">
+				<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+					<span style="font-size: 24px;">${template.icon}</span>
+					<div>
+						<div style="font-weight: 600; color: #333;">${template.name}</div>
+						<div style="font-size: 12px; color: #666;">${template.description}</div>
+					</div>
+				</div>
+				<div style="display: flex; gap: 6px; margin-top: 8px;">
+					${template.tags
+						.map(
+							(tag) =>
+								`<span style="font-size: 11px; padding: 3px 8px; background: #e3f2fd; color: #1976d2; border-radius: 4px;">${tag}</span>`
+						)
+						.join("")}
+				</div>
+			</div>
+		`
+			)
+			.join("");
+
+		ModalComponent.custom({
+			title: "Select Document Template",
+			content: `
+				<div style="max-height: 500px; overflow-y: auto;">
+					<p style="color: #666; margin-bottom: 15px;">Choose a template to get started quickly:</p>
+					${templatesHTML}
+					<div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e1e5e9;">
+						<button class="btn btn-secondary" onclick="window.ModalComponent.close()">Cancel</button>
+						<button class="btn btn-link" onclick="window.studyHallApp.documentUIManager.showCreateDocumentModal(); window.ModalComponent.close();" style="float: right;">
+							Create from scratch
+						</button>
+					</div>
+				</div>
+			`,
+		});
+	}
+
+	selectTemplate(templateId) {
+		const template = this.documentManager.documentTemplates.find(
+			(t) => t.id === templateId
+		);
+		if (!template) {
+			this.app.showNotification("Template not found", "error");
+			return;
+		}
+
+		const ModalComponent = window.ModalComponent;
+		ModalComponent.close();
+
+		// Show create document modal with template pre-filled
+		setTimeout(() => {
+			ModalComponent.form({
+				title: `Create Document from Template: ${template.name}`,
+				fields: [
+					{
+						name: "title",
+						label: "Document Title",
+						type: "text",
+						required: true,
+						placeholder: "Enter document title",
+					},
+					{
+						name: "description",
+						label: "Description",
+						type: "textarea",
+						placeholder: "Brief description of the document",
+					},
+					{
+						name: "category",
+						label: "Category",
+						type: "select",
+						required: true,
+						options: [
+							{ value: "hr-policies", label: "HR Policies" },
+							{ value: "company-policies", label: "Company Policies" },
+							{ value: "training", label: "Training Materials" },
+							{ value: "templates", label: "Templates" },
+							{ value: "general", label: "General" },
+						],
+						value: template.category || "general",
+					},
+					{
+						name: "content",
+						label: "Content",
+						type: "textarea",
+						placeholder: "Enter document content (supports Markdown)",
+						rows: 15,
+						value: template.content,
+					},
+					{
+						name: "tags",
+						label: "Tags (comma-separated)",
+						type: "text",
+						value: template.tags.join(", "),
+					},
+					{
+						name: "requiresApproval",
+						label: "Requires Approval",
+						type: "checkbox",
+						value: false,
+					},
+					{
+						name: "isPublic",
+						label: "Make Public",
+						type: "checkbox",
+						value: true,
+					},
+				],
+				onSubmit: (data) => {
+					try {
+						const tags = data.tags
+							? data.tags.split(",").map((tag) => tag.trim())
+							: [];
+
+						const newDocument = this.documentManager.createDocument({
+							title: data.title,
+							description: data.description,
+							category: data.category,
+							type: template.category || "document",
+							content: data.content,
+							tags: tags,
+							requiresApproval: data.requiresApproval,
+							isPublic: data.isPublic,
+							icon: template.icon,
+						});
+
+						this.app.showNotification(
+							`Document "${newDocument.title}" created from template!`,
+							"success"
+						);
+
+						this.renderDocuments();
+						ModalComponent.close();
+					} catch (error) {
+						console.error("Error creating document from template:", error);
+						this.app.showNotification(
+							"Failed to create document: " + error.message,
+							"error"
+						);
+					}
+				},
+			});
+		}, 100);
 	}
 
 	editDocument(id) {
-		// TODO: Implement document editing
-		this.app.showNotification("Document editing coming soon!", "info");
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.app.showNotification("Document not found", "error");
+			return;
+		}
+
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) {
+			console.error("ModalComponent not available");
+			return;
+		}
+
+		ModalComponent.form({
+			title: `Edit Document: ${document.title}`,
+			fields: [
+				{
+					name: "title",
+					label: "Document Title",
+					type: "text",
+					required: true,
+					value: document.title,
+				},
+				{
+					name: "description",
+					label: "Description",
+					type: "textarea",
+					value: document.description,
+				},
+				{
+					name: "category",
+					label: "Category",
+					type: "select",
+					required: true,
+					options: [
+						{ value: "hr-policies", label: "HR Policies" },
+						{ value: "company-policies", label: "Company Policies" },
+						{ value: "training", label: "Training Materials" },
+						{ value: "templates", label: "Templates" },
+						{ value: "general", label: "General" },
+					],
+					value: document.category,
+				},
+				{
+					name: "content",
+					label: "Content",
+					type: "textarea",
+					placeholder: "Enter document content (supports Markdown)",
+					rows: 15,
+					value: document.content,
+				},
+				{
+					name: "tags",
+					label: "Tags (comma-separated)",
+					type: "text",
+					value: document.tags ? document.tags.join(", ") : "",
+				},
+				{
+					name: "status",
+					label: "Status",
+					type: "select",
+					options: [
+						{ value: "draft", label: "Draft" },
+						{ value: "published", label: "Published" },
+						{ value: "pending_approval", label: "Pending Approval" },
+						{ value: "archived", label: "Archived" },
+					],
+					value: document.status,
+				},
+			],
+			onSubmit: (data) => {
+				try {
+					const tags = data.tags
+						? data.tags.split(",").map((tag) => tag.trim())
+						: [];
+
+					this.documentManager.updateDocument(id, {
+						title: data.title,
+						description: data.description,
+						category: data.category,
+						content: data.content,
+						tags: tags,
+						status: data.status,
+					});
+
+					this.app.showNotification(
+						`Document "${data.title}" updated successfully!`,
+						"success"
+					);
+
+					this.renderDocuments();
+					ModalComponent.close();
+				} catch (error) {
+					console.error("Error updating document:", error);
+					this.app.showNotification(
+						"Failed to update document: " + error.message,
+						"error"
+					);
+				}
+			},
+		});
 	}
 
 	shareDocument(id) {
-		// TODO: Implement document sharing
-		this.app.showNotification("Document sharing coming soon!", "info");
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.app.showNotification("Document not found", "error");
+			return;
+		}
+
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) {
+			console.error("ModalComponent not available");
+			return;
+		}
+
+		// Build share options
+		const shareURL = `${window.location.origin}${window.location.pathname}#docs?id=${id}`;
+		const shareText = `Check out this document: ${document.title}`;
+
+		ModalComponent.custom({
+			title: `Share Document: ${document.title}`,
+			content: `
+				<div style="padding: 10px 0;">
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+							Share Link
+						</label>
+						<div style="display: flex; gap: 8px;">
+							<input type="text" 
+								id="shareUrlInput" 
+								value="${shareURL}" 
+								readonly 
+								style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; background: #f8f9fa;"
+								onclick="this.select()"
+							/>
+							<button class="btn btn-primary" onclick="
+								const input = document.getElementById('shareUrlInput');
+								input.select();
+								document.execCommand('copy');
+								window.studyHallApp.showNotification('Link copied to clipboard!', 'success');
+							">
+								Copy
+							</button>
+						</div>
+					</div>
+
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 12px; font-weight: 600; color: #333;">
+							Share via Email
+						</label>
+						<div style="display: flex; gap: 8px;">
+							<input type="email" 
+								id="shareEmailInput" 
+								placeholder="colleague@studyhall.com" 
+								style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;"
+							/>
+							<button class="btn btn-primary" onclick="
+								const email = document.getElementById('shareEmailInput').value;
+								if (email) {
+									window.studyHallApp.documentUIManager.sendDocumentViaEmail(${id}, email);
+								} else {
+									window.studyHallApp.showNotification('Please enter an email address', 'error');
+								}
+							">
+								Send
+							</button>
+						</div>
+					</div>
+
+					<div style="margin-bottom: 20px;">
+						<label style="display: block; margin-bottom: 12px; font-weight: 600; color: #333;">
+							Add Collaborator
+						</label>
+						<div style="display: flex; gap: 8px;">
+							<input type="email" 
+								id="collaboratorEmailInput" 
+								placeholder="colleague@studyhall.com" 
+								style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px;"
+							/>
+							<button class="btn btn-primary" onclick="
+								const email = document.getElementById('collaboratorEmailInput').value;
+								if (email) {
+									window.studyHallApp.documentUIManager.addCollaborator(${id}, email);
+								} else {
+									window.studyHallApp.showNotification('Please enter an email address', 'error');
+								}
+							">
+								Add
+							</button>
+						</div>
+					</div>
+
+					${
+						document.collaborators && document.collaborators.length > 0
+							? `
+					<div style="margin-bottom: 15px;">
+						<label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+							Current Collaborators
+						</label>
+						<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+							${document.collaborators
+								.map(
+									(email) => `
+								<span style="padding: 6px 12px; background: #e3f2fd; color: #1976d2; border-radius: 16px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+									${email}
+									${
+										email !== document.authorId
+											? `<button onclick="window.studyHallApp.documentUIManager.removeCollaborator(${id}, '${email}')" style="background: none; border: none; color: #1976d2; cursor: pointer; padding: 0; font-size: 16px;">×</button>`
+											: ""
+									}
+								</span>
+							`
+								)
+								.join("")}
+						</div>
+					</div>
+					`
+							: ""
+					}
+
+					<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e1e5e9;">
+						<button class="btn btn-secondary" onclick="window.ModalComponent.close()">
+							Close
+						</button>
+					</div>
+				</div>
+			`,
+		});
+	}
+
+	sendDocumentViaEmail(id, email) {
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.app.showNotification("Document not found", "error");
+			return;
+		}
+
+		// In a real application, this would send an actual email
+		// For now, we'll just simulate it
+		console.log(`Sending document ${id} to ${email}`);
+
+		this.app.showNotification(
+			`Document "${document.title}" shared with ${email}`,
+			"success"
+		);
+
+		// Add to collaborators if not already present
+		if (!document.collaborators.includes(email)) {
+			this.addCollaborator(id, email);
+		}
+	}
+
+	addCollaborator(id, email) {
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.app.showNotification("Document not found", "error");
+			return;
+		}
+
+		if (document.collaborators.includes(email)) {
+			this.app.showNotification(`${email} is already a collaborator`, "info");
+			return;
+		}
+
+		try {
+			// Add collaborator
+			document.collaborators.push(email);
+			this.documentManager.updateDocument(id, {
+				collaborators: document.collaborators,
+			});
+
+			this.app.showNotification(`${email} added as collaborator`, "success");
+
+			// Refresh the share modal to show updated collaborators
+			const ModalComponent = window.ModalComponent;
+			ModalComponent.close();
+			setTimeout(() => this.shareDocument(id), 100);
+		} catch (error) {
+			console.error("Error adding collaborator:", error);
+			this.app.showNotification("Failed to add collaborator", "error");
+		}
+	}
+
+	removeCollaborator(id, email) {
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.app.showNotification("Document not found", "error");
+			return;
+		}
+
+		try {
+			// Remove collaborator
+			document.collaborators = document.collaborators.filter(
+				(collab) => collab !== email
+			);
+			this.documentManager.updateDocument(id, {
+				collaborators: document.collaborators,
+			});
+
+			this.app.showNotification(`${email} removed as collaborator`, "success");
+
+			// Refresh the share modal
+			const ModalComponent = window.ModalComponent;
+			ModalComponent.close();
+			setTimeout(() => this.shareDocument(id), 100);
+		} catch (error) {
+			console.error("Error removing collaborator:", error);
+			this.app.showNotification("Failed to remove collaborator", "error");
+		}
 	}
 
 	downloadDocument(id) {

@@ -281,19 +281,65 @@ export class ModalComponent {
 	}
 
 	// Static method to create and show a simple modal quickly
-	static show(title, content, options = {}) {
+	static show(title, content, classNameOrOptions = {}, options = {}) {
+		// Handle different parameter combinations
+		let finalOptions = {};
+		let className = "";
+
+		if (typeof classNameOrOptions === "string") {
+			// Called as show(title, content, className, options)
+			className = classNameOrOptions;
+			finalOptions = { className, ...options };
+		} else {
+			// Called as show(title, content, options)
+			finalOptions = { ...classNameOrOptions };
+		}
+
 		const modal = new ModalComponent({
 			title,
 			content,
-			...options,
+			...finalOptions,
 		});
 		return modal.show();
 	}
 
 	// Static method to create a confirmation modal
-	static confirm(title, content, onConfirm, onCancel = null) {
+	static confirm(configOrTitle, content, onConfirm, onCancel = null) {
+		// Support both object-based and parameter-based API
+		if (typeof configOrTitle === "object" && configOrTitle !== null) {
+			// Object-based API
+			const config = configOrTitle;
+			return new ModalComponent({
+				title: config.title || "Confirm",
+				content: config.message || config.content || "",
+				buttons: [
+					{
+						text: config.cancelText || "Cancel",
+						action: "cancel",
+						className: "btn-secondary",
+					},
+					{
+						text: config.confirmText || "Confirm",
+						action: "confirm",
+						className: config.confirmClass || "btn-primary",
+					},
+				],
+				onButtonClick: (action, event, button, modal) => {
+					if (action === "confirm" && config.onConfirm) {
+						config.onConfirm(modal);
+					} else if (action === "cancel" && config.onCancel) {
+						config.onCancel(modal);
+					} else {
+						modal.hide();
+					}
+				},
+				...config,
+			}).show();
+		}
+
+		// Traditional parameter-based API
 		return new ModalComponent({
-			title,
+			title: configOrTitle,
 			content,
 			buttons: [
 				{ text: "Cancel", action: "cancel", className: "btn-secondary" },
@@ -324,9 +370,96 @@ export class ModalComponent {
 	}
 
 	// Static method to create a form modal
-	static form(title, formContent, onSubmit, options = {}) {
+	static form(configOrTitle, formContent, onSubmit, options = {}) {
+		// Use object-based API if first argument is an object with a 'fields' array property
+		if (
+			typeof configOrTitle === "object" &&
+			configOrTitle !== null &&
+			Array.isArray(configOrTitle.fields)
+		) {
+			const config = configOrTitle;
+			const fields = config.fields || [];
+			const title = config.title || "";
+			const submitCallback = config.onSubmit;
+
+			// Generate form HTML from fields
+			let formHtml = "";
+			fields.forEach((field) => {
+				const required = field.required ? "required" : "";
+				const placeholder = field.placeholder
+					? `placeholder="${field.placeholder}"`
+					: "";
+				const value = field.value ? `value="${field.value}"` : "";
+
+				switch (field.type) {
+					case "textarea":
+						formHtml += `
+							   <div class="form-group">
+								   <label for="${field.name}">${field.label}</label>
+								   <textarea id="${field.name}" name="${
+							field.name
+						}" ${required} ${placeholder}>${field.value || ""}</textarea>
+							   </div>
+						   `;
+						break;
+					case "select":
+						const selectOptions = field.options
+							? field.options
+									.map(
+										(opt) =>
+											`<option value="${opt.value}" ${
+												opt.selected ? "selected" : ""
+											}>${opt.label}</option>`
+									)
+									.join("")
+							: "";
+						formHtml += `
+							   <div class="form-group">
+								   <label for="${field.name}">${field.label}</label>
+								   <select id="${field.name}" name="${field.name}" ${required}>
+									   ${selectOptions}
+								   </select>
+							   </div>
+						   `;
+						break;
+					default: // text, email, etc.
+						formHtml += `
+							   <div class="form-group">
+								   <label for="${field.name}">${field.label}</label>
+								   <input type="${field.type || "text"}" id="${field.name}" name="${
+							field.name
+						}" ${required} ${placeholder} ${value}>
+							   </div>
+						   `;
+				}
+			});
+
+			return new ModalComponent({
+				title,
+				content: `<form class="modal-form">${formHtml}</form>`,
+				buttons: [
+					{ text: "Cancel", action: "cancel", className: "btn-secondary" },
+					{ text: "Submit", action: "submit", className: "btn-primary" },
+				],
+				onSubmit: (e, modal, form) => {
+					e.preventDefault();
+					const formData = new FormData(form);
+					const data = {};
+					for (let [key, value] of formData.entries()) {
+						data[key] = value;
+					}
+					if (submitCallback) {
+						submitCallback(data);
+					}
+					modal.hide();
+				},
+				...config,
+			}).show();
+		}
+
+		// Handle traditional API (title, formContent, onSubmit, options)
 		return new ModalComponent({
-			title,
+			title: configOrTitle,
 			content: `<form class="modal-form">${formContent}</form>`,
 			buttons: [
 				{ text: "Cancel", action: "cancel", className: "btn-secondary" },
@@ -335,5 +468,98 @@ export class ModalComponent {
 			onSubmit,
 			...options,
 		}).show();
+	}
+
+	/**
+	 * Creates a custom modal with flexible content
+	 * @param {Object} config - Configuration object
+	 * @param {string} config.title - Modal title
+	 * @param {string} config.content - HTML content for the modal body
+	 * @param {Array} [config.buttons] - Optional custom buttons
+	 * @param {string} [config.className] - Additional CSS class for the modal
+	 * @param {Function} [config.onClose] - Callback when modal is closed
+	 * @returns {ModalComponent} The modal instance
+	 */
+	static custom(config) {
+		const {
+			title,
+			content,
+			buttons = [
+				{ text: "Close", action: "close", className: "btn-secondary" },
+			],
+			className,
+			onClose,
+			...rest
+		} = config;
+
+		return new ModalComponent({
+			title,
+			content,
+			buttons,
+			className,
+			onClose,
+			...rest,
+		}).show();
+	}
+
+	/**
+	 * Creates a menu-style modal with clickable options
+	 * @param {Object} config - Configuration object
+	 * @param {string} config.title - Modal title
+	 * @param {Array} config.options - Array of menu options
+	 * @param {string} config.options[].label - Option label text
+	 * @param {string} [config.options[].icon] - Optional icon/emoji
+	 * @param {Function} config.options[].action - Function to call when option is clicked
+	 * @param {string} [config.options[].className] - Optional CSS class for the option
+	 * @param {boolean} [config.options[].danger] - Whether this is a dangerous action (red styling)
+	 * @returns {ModalComponent} The modal instance
+	 */
+	static menu(config) {
+		const { title, options = [] } = config;
+
+		// Build menu HTML
+		let menuHtml = '<div class="modal-menu">';
+		options.forEach((option) => {
+			const icon = option.icon
+				? `<span class="menu-icon">${option.icon}</span>`
+				: "";
+			const dangerClass = option.danger ? "menu-item-danger" : "";
+			const customClass = option.className || "";
+
+			menuHtml += `
+				<button class="menu-item ${dangerClass} ${customClass}" data-action="${option.label}">
+					${icon}
+					<span class="menu-label">${option.label}</span>
+				</button>
+			`;
+		});
+		menuHtml += "</div>";
+
+		const modal = new ModalComponent({
+			title,
+			content: menuHtml,
+			buttons: [
+				{ text: "Cancel", action: "cancel", className: "btn-secondary" },
+			],
+			className: "modal-menu-container",
+		}).show();
+
+		// Bind menu item clicks
+		setTimeout(() => {
+			const menuItems = modal.modalElement.querySelectorAll(".menu-item");
+			menuItems.forEach((item, index) => {
+				item.addEventListener("click", (e) => {
+					e.preventDefault();
+					const option = options[index];
+					if (option && option.action) {
+						modal.hide();
+						// Execute action after modal closes
+						setTimeout(() => option.action(), 150);
+					}
+				});
+			});
+		}, 0);
+
+		return modal;
 	}
 }

@@ -5,6 +5,9 @@ import { authSystem } from "./auth.js";
 import { UserManager } from "./userManager.js";
 import { PermissionsManager } from "./permissionsManager.js";
 import { HierarchyManager } from "./hierarchyManager.js";
+import { DashboardManager } from "./dashboardManager.js";
+import { SpaceManager } from "./spaceManager.js";
+import { MeetingManager } from "./meetingManager.js";
 import { DocumentManager } from "./documentManager.js";
 import { DocumentUIManager } from "./documentUIManager.js";
 import { TaskManager } from "./taskManager.js";
@@ -48,6 +51,33 @@ export class StudyHallApp {
 			this.permissionsManager
 		);
 
+		// Legacy task management (will be replaced by TaskManager)
+		this.tasks = this.loadTasks();
+		this.taskIdCounter = this.getNextTaskId();
+
+		// Initialize meeting management system
+		this.meetingManager = new MeetingManager({
+			authSystem: this.authSystem,
+		});
+
+		// Expose meetings for backward compatibility
+		this.meetings = this.meetingManager.getAllMeetings();
+
+		// Initialize dashboard management system
+		this.dashboardManager = new DashboardManager({
+			authSystem: this.authSystem,
+			taskManager: this.taskManager,
+			tasks: this.tasks, // Legacy support
+			meetings: this.meetings,
+		});
+
+		// Expose dashboards for backward compatibility
+		this.dashboards = this.dashboardManager.getAllDashboards();
+		this.dailyStats = this.dashboardManager.dailyStats;
+
+		// Initialize space management system (will receive navigationManager after DOM ready)
+		this.spaceManager = null;
+
 		// UI managers will be initialized after DOM is ready
 		this.documentUIManager = null;
 		this.taskUIManager = null;
@@ -59,58 +89,209 @@ export class StudyHallApp {
 		// Initialize NavigationComponent for sidebar management
 		this.navigationManager = null;
 
-		// Load dashboards from localStorage or use defaults
-		this.dashboards = this.loadDashboards();
-
-		// Legacy task management (will be replaced by TaskManager)
-		this.tasks = this.loadTasks();
-		this.taskIdCounter = this.getNextTaskId();
-
 		// Legacy documentation management (will be replaced by DocumentManager)
 		this.documents = this.loadDocuments();
 		this.policies = this.loadPolicies();
 		this.trainings = this.loadTrainings();
 		this.templates = this.loadTemplates();
 
-		// Calendar/Meetings management
-		this.meetings = this.loadMeetings();
-		this.dailyStats = this.generateDailyStats();
-
 		this.init();
 	}
 
-	// Dashboard persistence methods
+	// ========================
+	// DASHBOARD METHODS (Delegated to DashboardManager)
+	// ========================
+
+	/**
+	 * Load dashboards - DEPRECATED: Use dashboardManager instead
+	 * Kept for backward compatibility
+	 */
 	loadDashboards() {
-		try {
-			const saved = localStorage.getItem("study-hall-dashboards");
-			if (saved) {
-				const dashboards = JSON.parse(saved);
-				console.log("Loaded dashboards from localStorage:", dashboards);
-				return dashboards;
-			}
-		} catch (error) {
-			console.warn("Failed to load dashboards from localStorage:", error);
-		}
-
-		// Return default dashboards if nothing saved or error occurred
-		return [
-			{ id: "dashboard", name: "Overview", icon: "📊" },
-			{ id: "projects", name: "HR Projects", icon: "📋" },
-			{ id: "reports", name: "Analytics", icon: "📈" },
-		];
+		console.warn(
+			"⚠️ loadDashboards() is deprecated. Use dashboardManager.loadDashboards()"
+		);
+		return this.dashboardManager?.loadDashboards() || [];
 	}
 
+	/**
+	 * Save dashboards - DEPRECATED: Use dashboardManager instead
+	 */
 	saveDashboards() {
-		try {
-			localStorage.setItem(
-				"study-hall-dashboards",
-				JSON.stringify(this.dashboards)
-			);
-			console.log("Dashboards saved to localStorage");
-		} catch (error) {
-			console.warn("Failed to save dashboards to localStorage:", error);
-		}
+		console.warn(
+			"⚠️ saveDashboards() is deprecated. Use dashboardManager.saveDashboards()"
+		);
+		this.dashboardManager?.saveDashboards();
 	}
+
+	/**
+	 * Generate daily stats - Delegated to DashboardManager
+	 */
+	generateDailyStats() {
+		return (
+			this.dashboardManager?.generateDailyStats() || {
+				tasksCompleted: 0,
+				tasksPending: 0,
+				tasksOverdue: 0,
+				meetingsToday: 0,
+				hoursInMeetings: 0,
+				totalTasks: 0,
+			}
+		);
+	}
+
+	/**
+	 * Render dashboard - Delegated to DashboardManager
+	 */
+	renderDashboard() {
+		this.dashboardManager?.renderDashboard();
+	}
+
+	/**
+	 * Render my tasks - Delegated to DashboardManager
+	 */
+	renderMyTasks() {
+		this.dashboardManager?.renderMyTasks();
+	}
+
+	/**
+	 * Render upcoming meetings - Delegated to MeetingManager
+	 */
+	renderUpcomingMeetings() {
+		this.meetingManager?.renderUpcomingMeetings();
+	}
+
+	/**
+	 * Render daily stats - Delegated to DashboardManager
+	 */
+	renderDailyStats() {
+		this.dashboardManager?.renderDailyStats();
+	}
+
+	/**
+	 * Show create dashboard modal - Delegated to DashboardManager
+	 */
+	showCreateDashboardModal() {
+		this.dashboardManager?.showCreateDashboardModal();
+	}
+
+	/**
+	 * Handle dashboard creation - Delegated to DashboardManager
+	 */
+	handleDashboardCreation(formData) {
+		const dashboard = this.dashboardManager?.handleDashboardCreation(formData);
+		if (dashboard) {
+			// Update local reference for backward compatibility
+			this.dashboards = this.dashboardManager.getAllDashboards();
+			// Refresh navigation to show new dashboard
+			this.navigationManager?.refresh();
+		}
+		return dashboard;
+	}
+
+	/**
+	 * Create dashboard - Delegated to DashboardManager
+	 */
+	createDashboard(dashboardData) {
+		const dashboard = this.dashboardManager?.createDashboard(dashboardData);
+		if (dashboard) {
+			// Update local reference for backward compatibility
+			this.dashboards = this.dashboardManager.getAllDashboards();
+		}
+		return dashboard;
+	}
+
+	/**
+	 * Delete dashboard - Delegated to DashboardManager
+	 */
+	deleteDashboard(dashboardId) {
+		const result = this.dashboardManager?.deleteDashboard(dashboardId);
+		if (result) {
+			// Update local reference for backward compatibility
+			this.dashboards = this.dashboardManager.getAllDashboards();
+			// Refresh navigation
+			this.navigationManager?.refresh();
+		}
+		return result;
+	}
+
+	// ========================
+	// MEETING MANAGEMENT DELEGATION METHODS
+	// ========================
+
+	/**
+	 * Load meetings - Delegated to MeetingManager
+	 */
+	loadMeetings() {
+		return this.meetingManager?.getAllMeetings() || [];
+	}
+
+	/**
+	 * Get all meetings - Delegated to MeetingManager
+	 */
+	getAllMeetings() {
+		return this.meetingManager?.getAllMeetings() || [];
+	}
+
+	/**
+	 * Get meeting by ID - Delegated to MeetingManager
+	 */
+	getMeeting(meetingId) {
+		return this.meetingManager?.getMeeting(meetingId);
+	}
+
+	/**
+	 * Create meeting - Delegated to MeetingManager
+	 */
+	createMeeting(meetingData) {
+		const meeting = this.meetingManager?.createMeeting(meetingData);
+		if (meeting) {
+			// Update local reference for backward compatibility
+			this.meetings = this.meetingManager.getAllMeetings();
+		}
+		return meeting;
+	}
+
+	/**
+	 * Update meeting - Delegated to MeetingManager
+	 */
+	updateMeeting(meetingId, updates) {
+		const result = this.meetingManager?.updateMeeting(meetingId, updates);
+		if (result) {
+			// Update local reference for backward compatibility
+			this.meetings = this.meetingManager.getAllMeetings();
+		}
+		return result;
+	}
+
+	/**
+	 * Delete meeting - Delegated to MeetingManager
+	 */
+	deleteMeeting(meetingId) {
+		const result = this.meetingManager?.deleteMeeting(meetingId);
+		if (result) {
+			// Update local reference for backward compatibility
+			this.meetings = this.meetingManager.getAllMeetings();
+		}
+		return result;
+	}
+
+	/**
+	 * Show create meeting modal - Delegated to MeetingManager
+	 */
+	showCreateMeetingModal() {
+		this.meetingManager?.showCreateMeetingModal();
+	}
+
+	/**
+	 * Show edit meeting modal - Delegated to MeetingManager
+	 */
+	showEditMeetingModal(meetingId) {
+		this.meetingManager?.showEditMeetingModal(meetingId);
+	}
+
+	// ========================
+	// TASK MANAGEMENT METHODS
+	// ========================
 
 	// Task management methods
 	loadTasks() {
@@ -172,104 +353,9 @@ export class StudyHallApp {
 		return maxId + 1;
 	}
 
-	// Calendar/Meetings management
-	loadMeetings() {
-		try {
-			const saved = localStorage.getItem("study-hall-meetings");
-			if (saved) {
-				return JSON.parse(saved);
-			}
-		} catch (error) {
-			console.warn("Failed to load meetings from localStorage:", error);
-		}
-
-		// Return default meetings if none saved
-		return [
-			{
-				id: 1,
-				title: "Team Standup",
-				date: "2025-11-05",
-				time: "09:00",
-				duration: 30,
-				attendees: ["Admin User", "Sarah Johnson", "Mike Chen"],
-				type: "recurring",
-				location: "Conference Room A",
-			},
-			{
-				id: 2,
-				title: "Interview: Software Engineer",
-				date: "2025-11-06",
-				time: "14:00",
-				duration: 60,
-				attendees: ["Sarah Johnson", "Mike Chen"],
-				type: "interview",
-				location: "Video Call",
-			},
-			{
-				id: 3,
-				title: "HR Department Review",
-				date: "2025-11-07",
-				time: "10:30",
-				duration: 90,
-				attendees: ["Admin User", "Sarah Johnson"],
-				type: "meeting",
-				location: "Conference Room B",
-			},
-			{
-				id: 4,
-				title: "Quarterly Planning",
-				date: "2025-11-08",
-				time: "13:00",
-				duration: 120,
-				attendees: ["Admin User", "Sarah Johnson", "Mike Chen"],
-				type: "planning",
-				location: "Main Conference Room",
-			},
-		];
-	}
-
-	generateDailyStats() {
-		const currentUser = this.authSystem?.getCurrentUser();
-		const today = new Date().toISOString().split("T")[0];
-
-		// Get user's tasks
-		const userTasks = this.tasks.filter(
-			(task) => task.assigneeEmail === currentUser?.email
-		);
-
-		// Get today's meetings
-		const todaysMeetings = this.meetings.filter(
-			(meeting) =>
-				meeting.date === today && meeting.attendees.includes(currentUser?.name)
-		);
-
-		// Calculate stats
-		const completedTasks = userTasks.filter(
-			(task) => task.status === "completed"
-		).length;
-		const pendingTasks = userTasks.filter(
-			(task) => task.status === "pending"
-		).length;
-		const overdueTasks = userTasks.filter(
-			(task) =>
-				task.dueDate &&
-				new Date(task.dueDate) < new Date() &&
-				task.status !== "completed"
-		).length;
-
-		const todayHours =
-			todaysMeetings.reduce((total, meeting) => total + meeting.duration, 0) /
-			60;
-
-		return {
-			tasksCompleted: completedTasks,
-			tasksPending: pendingTasks,
-			tasksOverdue: overdueTasks,
-			meetingsToday: todaysMeetings.length,
-			hoursInMeetings: Math.round(todayHours * 10) / 10,
-			totalTasks: userTasks.length,
-		};
-	}
+	// ========================
+	// DOCUMENTATION MANAGEMENT METHODS
+	// ========================
 
 	// Documentation management methods
 	loadDocuments() {
@@ -536,181 +622,9 @@ export class StudyHallApp {
 		}
 	}
 
-	// Dashboard rendering methods
-	renderMyTasks() {
-		const currentUser = this.authSystem?.getCurrentUser();
-		const container = document.getElementById("myTasksContainer");
-
-		if (!container || !currentUser) return;
-
-		// Get user's tasks sorted by most recent
-		const userTasks = this.tasks
-			.filter((task) => task.assigneeEmail === currentUser.email)
-			.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-
-		if (userTasks.length === 0) {
-			container.innerHTML = `
-				<div class="empty-state">
-					<p>No tasks assigned to you yet.</p>
-					<button class="btn btn-primary" onclick="studyHallApp.showTaskModal()">
-						Create Your First Task
-					</button>
-				</div>
-			`;
-			return;
-		}
-
-		container.innerHTML = userTasks
-			.map(
-				(task) => `
-			<div class="task-item ${task.status}" data-task-id="${task.id}">
-				<div class="task-header">
-					<div class="task-title-section">
-						<button class="task-status-btn" onclick="studyHallApp.toggleTaskStatus(${
-							task.id
-						})" 
-								title="${
-									task.status === "completed"
-										? "Mark as pending"
-										: "Mark as completed"
-								}">
-							${task.status === "completed" ? "✅" : "⭕"}
-						</button>
-						<div class="task-details">
-							<div class="task-title">${task.title}</div>
-							${
-								task.description
-									? `<div class="task-description">${task.description}</div>`
-									: ""
-							}
-						</div>
-					</div>
-					<div class="task-actions">
-						<span class="task-priority priority-${task.priority}">${task.priority}</span>
-						<button class="task-action-btn" onclick="studyHallApp.showTaskModal(${
-							task.id
-						})" title="Edit task">
-							✏️
-						</button>
-						<button class="task-action-btn" onclick="studyHallApp.deleteTask(${
-							task.id
-						})" title="Delete task">
-							🗑️
-						</button>
-					</div>
-				</div>
-				<div class="task-meta">
-					${task.dueDate ? `<span class="task-due-date">Due: ${task.dueDate}</span>` : ""}
-					<span class="task-assignee">Assigned to: ${task.assigneeName}</span>
-				</div>
-			</div>
-		`
-			)
-			.join("");
-	}
-
-	renderUpcomingMeetings() {
-		const currentUser = this.authSystem?.getCurrentUser();
-		const container = document.getElementById("meetingsContainer");
-
-		if (!container || !currentUser) return;
-
-		// Get upcoming meetings (next 7 days) where user is attending
-		const today = new Date();
-		const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-		const upcomingMeetings = this.meetings
-			.filter((meeting) => {
-				const meetingDate = new Date(meeting.date);
-				return (
-					meetingDate >= today &&
-					meetingDate <= nextWeek &&
-					meeting.attendees.includes(currentUser.name)
-				);
-			})
-			.sort(
-				(a, b) =>
-					new Date(a.date + " " + a.time) - new Date(b.date + " " + b.time)
-			)
-			.slice(0, 5); // Show only next 5 meetings
-
-		if (upcomingMeetings.length === 0) {
-			container.innerHTML = `
-				<div class="empty-state">
-					<p>No upcoming meetings this week.</p>
-				</div>
-			`;
-			return;
-		}
-
-		container.innerHTML = upcomingMeetings
-			.map(
-				(meeting) => `
-			<div class="meeting-item">
-				<div class="meeting-header">
-					<div class="meeting-title">${meeting.title}</div>
-					<div class="meeting-time">${meeting.time}</div>
-				</div>
-				<div class="meeting-info">
-					<div class="meeting-date">${new Date(meeting.date).toLocaleDateString()}</div>
-					<div class="meeting-location">📍 ${meeting.location}</div>
-					<div class="meeting-attendees">👥 ${meeting.attendees.length} attendees</div>
-					<span class="meeting-type ${meeting.type}">${meeting.type}</span>
-				</div>
-			</div>
-		`
-			)
-			.join("");
-	}
-
-	renderDailyStats() {
-		const container = document.getElementById("dailyStats");
-		const stats = this.dailyStats;
-
-		if (!container) return;
-
-		container.innerHTML = `
-			<div class="stats-grid">
-				<div class="stat-card tasks-completed">
-					<div class="stat-number">${stats.tasksCompleted}</div>
-					<div class="stat-label">Completed</div>
-				</div>
-				<div class="stat-card">
-					<div class="stat-number">${stats.tasksPending}</div>
-					<div class="stat-label">Pending</div>
-				</div>
-				<div class="stat-card tasks-overdue">
-					<div class="stat-number">${stats.tasksOverdue}</div>
-					<div class="stat-label">Overdue</div>
-				</div>
-				<div class="stat-card meetings">
-					<div class="stat-number">${stats.meetingsToday}</div>
-					<div class="stat-label">Meetings Today</div>
-				</div>
-			</div>
-		`;
-	}
-
-	renderDashboard() {
-		try {
-			console.log("Rendering dashboard components...");
-
-			// Render all dashboard components
-			console.log("- Rendering my tasks...");
-			this.renderMyTasks();
-
-			console.log("- Rendering upcoming meetings...");
-			this.renderUpcomingMeetings();
-
-			console.log("- Rendering daily stats...");
-			this.renderDailyStats();
-
-			console.log("Dashboard rendered successfully!");
-		} catch (error) {
-			console.error("Error rendering dashboard:", error);
-			console.error("Error stack:", error.stack);
-		}
-	}
+	// ========================
+	// DOCUMENTATION RENDERING METHODS
+	// ========================
 
 	// Documentation rendering methods
 	renderDocuments(category = "all") {
@@ -1379,36 +1293,46 @@ export class StudyHallApp {
 	// Initialize NavigationComponent for sidebar management
 	initializeNavigationManager() {
 		try {
-			this.navigationManager = new NavigationComponent({
-				container: "#sidebar",
-				sections: ["favorites", "dashboards", "documentation", "spaces"],
-				initialStates: this.sectionStates,
-				onNavigate: (view) => {
-					// Delegate to ViewManager for navigation
-					if (this.viewManager) {
-						this.viewManager.navigate(view);
-					} else {
-						// Fallback to legacy navigation
-						this.navigateToView(view);
-					}
-				},
-				onSectionToggle: (sectionName, isExpanded) => {
-					// Update app section states
-					this.sectionStates[sectionName] = isExpanded;
-					this.saveSectionStates();
-				},
-				onAddDashboard: () => {
-					this.showAddDashboardModal();
-				},
-				onAddSpace: () => {
-					this.showAddSpaceModal();
-				},
-				onItemOptions: (itemId, itemType, event) => {
-					this.handleNavigationItemOptions(itemId, itemType, event);
-				},
-			});
+			// Small delay to ensure DOM is fully ready
+			setTimeout(() => {
+				this.navigationManager = new NavigationComponent({
+					container: "#sidebar",
+					sections: ["favorites", "dashboards", "documentation", "spaces"],
+					initialStates: this.sectionStates,
+					onNavigate: (view) => {
+						// Delegate to ViewManager for navigation
+						if (this.viewManager) {
+							this.viewManager.navigateToView(view);
+						} else {
+							// Fallback to legacy navigation
+							this.navigateToView(view);
+						}
+					},
+					onSectionToggle: (sectionName, isExpanded) => {
+						// Update app section states
+						this.sectionStates[sectionName] = isExpanded;
+						this.saveSectionStates();
+					},
+					onAddDashboard: () => {
+						this.showAddDashboardModal();
+					},
+					onAddSpace: () => {
+						this.showAddSpaceModal();
+					},
+					onItemOptions: (itemId, itemType, event) => {
+						this.handleNavigationItemOptions(itemId, itemType, event);
+					},
+				});
 
-			console.log("NavigationManager initialized");
+				// Initialize SpaceManager now that navigationManager is available
+				this.spaceManager = new SpaceManager({
+					authSystem: this.authSystem,
+					navigationManager: this.navigationManager,
+				});
+
+				console.log("NavigationManager initialized");
+				console.log("SpaceManager initialized");
+			}, 100); // Small delay to ensure DOM is fully ready
 		} catch (error) {
 			console.error("Failed to initialize NavigationManager:", error);
 			console.warn("App will continue without NavigationManager");
@@ -1461,10 +1385,9 @@ export class StudyHallApp {
 		console.log("Dashboard options for:", dashboardId);
 	}
 
-	// Show space options menu
+	// Show space options menu - Delegated to SpaceManager
 	showSpaceOptions(spaceId, event) {
-		// TODO: Implement space options menu
-		console.log("Space options for:", spaceId);
+		this.spaceManager?.showSpaceOptionsMenu(spaceId, event);
 	}
 
 	// Show add dashboard modal
@@ -1482,19 +1405,9 @@ export class StudyHallApp {
 		});
 	}
 
-	// Show add space modal
+	// Show add space modal - Delegated to SpaceManager
 	showAddSpaceModal() {
-		ModalComponent.form({
-			title: "Add Space",
-			fields: [
-				{ name: "name", label: "Space Name", type: "text", required: true },
-				{ name: "icon", label: "Icon", type: "text", placeholder: "🏢" },
-				{ name: "description", label: "Description", type: "textarea" },
-			],
-			onSubmit: (data) => {
-				this.addSpace(data);
-			},
-		});
+		this.spaceManager?.showCreateSpaceModal();
 	}
 
 	// Add dashboard helper
@@ -1520,14 +1433,9 @@ export class StudyHallApp {
 		);
 	}
 
-	// Add space helper
+	// Add space helper - Delegated to SpaceManager
 	addSpace(spaceData) {
-		// TODO: Implement space management
-		console.log("Adding space:", spaceData);
-		NotificationComponent.show(
-			`Space "${spaceData.name}" added successfully`,
-			"success"
-		);
+		return this.spaceManager?.createSpace(spaceData);
 	}
 
 	updateUserInterface(user) {
@@ -1621,6 +1529,331 @@ export class StudyHallApp {
 		if (confirm("Are you sure you want to sign out?")) {
 			console.log("User logging out...");
 			this.authSystem.logout();
+		}
+	}
+
+	// ========================
+	// SIMPLE DOCUMENTS VIEW (for documents-view)
+	// ========================
+
+	/**
+	 * Render simple documents view with card-based grid layout
+	 * @param {string} [category="all"] - Category to filter by ("all", "hr_policies", "company_policies", "training", "templates")
+	 */
+	renderSimpleDocuments(category = "all") {
+		const container = document.getElementById("simpleDocumentsGrid");
+		const emptyState = document.getElementById("documentsEmptyState");
+
+		if (!container) return;
+
+		// Get documents from DocumentManager
+		let documents = this.documentManager.getAllDocuments();
+
+		// Filter by category if needed
+		if (category !== "all") {
+			documents = documents.filter((doc) => doc.category === category);
+		}
+
+		// Show empty state if no documents
+		if (documents.length === 0) {
+			container.style.display = "none";
+			if (emptyState) emptyState.style.display = "block";
+			return;
+		}
+
+		// Hide empty state and show grid
+		container.style.display = "grid";
+		if (emptyState) emptyState.style.display = "none";
+
+		// Render document cards
+		container.innerHTML = documents
+			.map(
+				(doc) => `
+			<div class="document-card" style="background: white; border: 1px solid #e1e5e9; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.3s ease;" 
+				onclick="studyHallApp.viewSimpleDocument(${doc.id})"
+				onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.1)'; this.style.borderColor='#007bff';"
+				onmouseout="this.style.transform='none'; this.style.boxShadow='none'; this.style.borderColor='#e1e5e9';">
+				<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+					<div style="display: flex; align-items: center; gap: 10px;">
+						<span style="font-size: 24px;">${doc.icon || "📄"}</span>
+						<div>
+							<div style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 4px;">${
+								doc.title
+							}</div>
+							<span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; background: ${this.getStatusColor(
+								doc.status
+							)}; color: white;">
+								${doc.status}
+							</span>
+						</div>
+					</div>
+					<button class="item-options" onclick="event.stopPropagation(); studyHallApp.showDocumentOptions(${
+						doc.id
+					}, event)" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 4px 8px; color: #666;">
+						⋯
+					</button>
+				</div>
+				<div style="color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+					${doc.description || "No description"}
+				</div>
+				<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
+					${
+						doc.tags
+							? doc.tags
+									.slice(0, 3)
+									.map(
+										(tag) =>
+											`<span style="padding: 3px 8px; background: #e3f2fd; color: #1976d2; border-radius: 12px; font-size: 11px; font-weight: 500;">${tag}</span>`
+									)
+									.join("")
+							: ""
+					}
+				</div>
+				<div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #f0f0f0; font-size: 12px; color: #999;">
+					<span>By ${doc.author}</span>
+					<span>${new Date(doc.dateCreated).toLocaleDateString()}</span>
+				</div>
+			</div>
+		`
+			)
+			.join("");
+	}
+
+	/**
+	 * Get color for document status badge
+	 * @param {string} status - Document status ("published", "draft", "pending_approval", "archived")
+	 * @returns {string} Hex color code
+	 */
+	getStatusColor(status) {
+		const colors = {
+			published: "#28a745",
+			draft: "#ffc107",
+			pending_approval: "#dc3545",
+			archived: "#6c757d",
+		};
+		return colors[status] || "#6c757d";
+	}
+
+	/**
+	 * Filter documents by category and update tab styling
+	 * @param {string} category - Category to filter by
+	 */
+	filterDocumentsByCategory(category) {
+		// Update active tab styling
+		document.querySelectorAll(".doc-tab").forEach((tab) => {
+			tab.style.borderBottom = "none";
+			tab.style.fontWeight = "normal";
+			tab.style.color = "#666";
+			tab.style.marginBottom = "0";
+		});
+
+		event.target.style.borderBottom = "2px solid #007bff";
+		event.target.style.fontWeight = "600";
+		event.target.style.color = "#007bff";
+		event.target.style.marginBottom = "-2px";
+
+		// Render filtered documents
+		this.renderSimpleDocuments(category);
+	}
+
+	/**
+	 * View document details in a modal viewer
+	 * @param {number} id - Document ID
+	 */
+	viewSimpleDocument(id) {
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.showNotification("Document not found", "error");
+			return;
+		}
+
+		// Record view
+		this.documentManager.recordDocumentView(id);
+
+		// Show document viewer modal
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) return;
+
+		ModalComponent.custom({
+			title: document.title,
+			content: `
+				<div style="max-height: 70vh; overflow-y: auto;">
+					<div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #e1e5e9;">
+						<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+							<span style="font-size: 32px;">${document.icon || "📄"}</span>
+							<div>
+								<span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; background: ${this.getStatusColor(
+									document.status
+								)}; color: white;">
+									${document.status}
+								</span>
+								<div style="font-size: 14px; color: #666; margin-top: 4px;">
+									By ${document.author} • ${new Date(document.dateCreated).toLocaleDateString()}
+								</div>
+							</div>
+						</div>
+						${
+							document.description
+								? `<p style="color: #666; margin: 10px 0;">${document.description}</p>`
+								: ""
+						}
+						${
+							document.tags && document.tags.length > 0
+								? `<div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;">${document.tags
+										.map(
+											(tag) =>
+												`<span style="padding: 3px 8px; background: #e3f2fd; color: #1976d2; border-radius: 12px; font-size: 11px;">${tag}</span>`
+										)
+										.join("")}</div>`
+								: ""
+						}
+					</div>
+					<div style="line-height: 1.6; font-size: 16px; color: #333; white-space: pre-wrap;">
+						${document.content || "No content available"}
+					</div>
+					<div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e1e5e9; display: flex; gap: 10px; justify-content: flex-end;">
+						<button class="btn btn-outline" onclick="studyHallApp.downloadDocument(${id})">
+							<span class="btn-icon">📥</span>
+							Download
+						</button>
+						<button class="btn btn-outline" onclick="window.ModalComponent.close(); studyHallApp.shareDocument(${id})">
+							<span class="btn-icon">🔗</span>
+							Share
+						</button>
+						<button class="btn btn-primary" onclick="window.ModalComponent.close(); studyHallApp.editDocument(${id})">
+							<span class="btn-icon">✏️</span>
+							Edit
+						</button>
+					</div>
+				</div>
+			`,
+		});
+	}
+
+	/**
+	 * Show document options context menu
+	 * @param {number} id - Document ID
+	 * @param {Event} event - Click event for menu positioning
+	 */
+	showDocumentOptions(id, event) {
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) return;
+
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) return;
+
+		ModalComponent.menu({
+			title: document.title,
+			options: [
+				{
+					label: "View",
+					icon: "👁️",
+					action: () => this.viewSimpleDocument(id),
+				},
+				{
+					label: "Edit",
+					icon: "✏️",
+					action: () => this.editDocument(id),
+				},
+				{
+					label: "Share",
+					icon: "🔗",
+					action: () => this.shareDocument(id),
+				},
+				{
+					label: "Download",
+					icon: "📥",
+					action: () => this.downloadDocument(id),
+				},
+				{
+					label: "Delete",
+					icon: "🗑️",
+					action: () => this.deleteSimpleDocument(id),
+					danger: true,
+				},
+			],
+			position: event ? { x: event.clientX, y: event.clientY } : null,
+		});
+	}
+
+	/**
+	 * Delete document with confirmation
+	 * @param {number} id - Document ID
+	 */
+	deleteSimpleDocument(id) {
+		const document = this.documentManager.getDocumentById(id);
+		if (!document) {
+			this.showNotification("Document not found", "error");
+			return;
+		}
+
+		const ModalComponent = window.ModalComponent;
+		if (!ModalComponent) return;
+
+		ModalComponent.confirm({
+			title: "Delete Document",
+			message: `Are you sure you want to delete "${document.title}"? This action cannot be undone.`,
+			confirmText: "Delete",
+			cancelText: "Cancel",
+			onConfirm: () => {
+				try {
+					this.documentManager.deleteDocument(id);
+					this.showNotification("Document deleted successfully", "success");
+					this.renderSimpleDocuments();
+					ModalComponent.close();
+				} catch (error) {
+					console.error("Error deleting document:", error);
+					this.showNotification("Failed to delete document", "error");
+				}
+			},
+		});
+	}
+
+	/**
+	 * Download document (delegates to DocumentUIManager)
+	 * @param {number} id - Document ID
+	 */
+	downloadDocument(id) {
+		if (this.documentUIManager) {
+			this.documentUIManager.downloadDocument(id);
+		}
+	}
+
+	/**
+	 * Show create document modal (delegates to DocumentUIManager)
+	 */
+	showCreateDocumentModal() {
+		if (this.documentUIManager) {
+			this.documentUIManager.showCreateDocumentModal();
+		}
+	}
+
+	/**
+	 * Show template selection modal (delegates to DocumentUIManager)
+	 */
+	showTemplateSelectionModal() {
+		if (this.documentUIManager) {
+			this.documentUIManager.showTemplateSelectionModal();
+		}
+	}
+
+	/**
+	 * Edit document (delegates to DocumentUIManager)
+	 * @param {number} id - Document ID
+	 */
+	editDocument(id) {
+		if (this.documentUIManager) {
+			this.documentUIManager.editDocument(id);
+		}
+	}
+
+	/**
+	 * Share document (delegates to DocumentUIManager)
+	 * @param {number} id - Document ID
+	 */
+	shareDocument(id) {
+		if (this.documentUIManager) {
+			this.documentUIManager.shareDocument(id);
 		}
 	}
 
@@ -1768,102 +2001,13 @@ export class StudyHallApp {
 		this.showCreateDashboardModal();
 	}
 
-	showCreateDashboardModal() {
-		console.log("showCreateDashboardModal called");
+	// Note: showCreateDashboardModal, handleDashboardCreation, createDashboard
+	// are now delegated to DashboardManager (see delegation methods above)
 
-		// Create form fields for the dashboard
-		const formFields = [
-			{
-				type: "text",
-				name: "name",
-				label: "Dashboard Name *",
-				placeholder: "e.g., Team Performance, Q4 Metrics",
-				required: true,
-			},
-			{
-				type: "textarea",
-				name: "description",
-				label: "Description",
-				placeholder: "Brief description of what this dashboard will track...",
-				rows: 3,
-			},
-			{
-				type: "select",
-				name: "icon",
-				label: "Icon",
-				options: [
-					{ value: "📊", text: "📊 Charts" },
-					{ value: "📈", text: "📈 Analytics" },
-					{ value: "📋", text: "📋 Tasks" },
-					{ value: "👥", text: "👥 People" },
-					{ value: "💼", text: "💼 Business" },
-					{ value: "🎯", text: "🎯 Goals" },
-					{ value: "⚡", text: "⚡ Performance" },
-					{ value: "🔍", text: "🔍 Insights" },
-					{ value: "💰", text: "💰 Finance" },
-					{ value: "📅", text: "📅 Calendar" },
-				],
-			},
-			{
-				type: "select",
-				name: "template",
-				label: "Template",
-				options: [
-					{ value: "blank", text: "Blank Dashboard" },
-					{ value: "analytics", text: "Analytics Template" },
-					{ value: "team", text: "Team Management" },
-					{ value: "project", text: "Project Overview" },
-					{ value: "hr", text: "HR Metrics" },
-				],
-			},
-		];
-
-		ModalComponent.form("Create New Dashboard", formFields, (formData) => {
-			this.handleDashboardCreation(formData);
-		});
-	}
-
-	handleDashboardCreation(formData) {
-		const dashboardData = {
-			id: `dashboard-${Date.now()}`,
-			name: formData.name ? formData.name.trim() : "",
-			description: formData.description ? formData.description.trim() : "",
-			icon: formData.icon || "📊",
-			template: formData.template || "blank",
-			createdAt: new Date().toISOString(),
-			widgets: [],
-		};
-
-		// Validate required fields
-		if (!dashboardData.name) {
-			this.showNotification("Dashboard name is required", "error");
-			return;
-		}
-
-		// Create the dashboard
-		this.createDashboard(dashboardData);
-
-		// Navigate to new dashboard
-		this.navigateToView(dashboardData.id);
-
-		this.showNotification("Dashboard created successfully!", "success");
-	}
-
-	createDashboard(dashboardData) {
-		// Add to dashboards array
-		this.dashboards.push(dashboardData);
-
-		// Save to localStorage
-		this.saveDashboards();
-
-		// Create the HTML view for this dashboard
-		this.createDashboardView(dashboardData);
-
-		// Add to sidebar navigation
-		this.addDashboardToSidebar(dashboardData);
-
-		console.log("Dashboard created:", dashboardData);
-	}
+	// ========================
+	// WORKSPACE & DASHBOARD VIEW GENERATION
+	// (These will be refactored in future phases)
+	// ========================
 
 	createDashboardView(dashboard) {
 		const contentArea = document.getElementById("contentArea");
@@ -2480,12 +2624,9 @@ export class StudyHallApp {
 		this.showNotification("Dashboard editing coming soon!", "info");
 	}
 
+	// Create new space - Delegated to SpaceManager
 	createNewSpace() {
-		const spaceName = prompt("Enter space name:");
-		if (spaceName && spaceName.trim()) {
-			this.showNotification(`Created new space: ${spaceName}`, "success");
-			console.log("New space created:", spaceName);
-		}
+		this.spaceManager?.showCreateSpaceModal();
 	}
 
 	showItemOptions(optionsButton) {
@@ -2705,8 +2846,9 @@ export class StudyHallApp {
 		}
 	}
 
+	// Show workspace menu - Delegated to SpaceManager
 	showWorkspaceMenu() {
-		this.showNotification("Workspace menu (coming soon)", "info");
+		this.spaceManager?.showWorkspaceMenu();
 	}
 
 	// Note: navigateToView method is now handled above (line 1734) - this duplicate was causing conflicts
@@ -2739,6 +2881,21 @@ export class StudyHallApp {
 		// Handle view-specific rendering
 		if (viewName === "tasks") {
 			this.renderTasks();
+		} else if (viewName === "documents") {
+			// Render simple documents view
+			this.renderSimpleDocuments();
+			// Set up search functionality
+			const searchInput = document.getElementById("simpleDocumentSearch");
+			if (searchInput) {
+				searchInput.addEventListener("input", (e) => {
+					const query = e.target.value.toLowerCase();
+					const cards = document.querySelectorAll(".document-card");
+					cards.forEach((card) => {
+						const text = card.textContent.toLowerCase();
+						card.style.display = text.includes(query) ? "block" : "none";
+					});
+				});
+			}
 		} else if (viewName === "docs") {
 			// Use enhanced document management
 			if (this.documentUIManager) {
